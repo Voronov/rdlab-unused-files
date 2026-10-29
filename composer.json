@@ -1,0 +1,39 @@
+{
+    "name": "rdlab/unused-files",
+    "type": "typo3-cms-extension",
+    "description": "Lists FAL files that are not referenced anywhere in TYPO3 and lets you delete them: CSV report via CLI and a backend module under File.",
+    "license": "GPL-2.0-or-later",
+    "keywords": [
+        "TYPO3",
+        "FAL",
+        "cleanup",
+        "unused files"
+    ],
+    "authors": [
+        {
+            "name": "RDLAB",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "typo3/cms-backend": "^13.4",
+        "typo3/cms-core": "^13.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "RDLAB\\UnusedFiles\\": "Classes/"
+        }
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "rdlab_unused_files"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "typo3/class-alias-loader": true,
+            "typo3/cms-composer-installers": true
+        }
+    }
+}

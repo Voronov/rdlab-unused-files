@@ -1,0 +1,22 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  RDLAB\UnusedFiles\:
+    resource: '../Classes/*'
+
+  RDLAB\UnusedFiles\Command\ReportCommand:
+    tags:
+      - name: console.command
+        command: 'rdlab:unusedfiles:report'
+        description: 'Export a CSV list of FAL files that are not referenced anywhere in TYPO3'
+        schedulable: true
+
+  RDLAB\UnusedFiles\Command\DeleteCommand:
+    tags:
+      - name: console.command
+        command: 'rdlab:unusedfiles:delete'
+        description: 'Delete FAL files that are not referenced anywhere in TYPO3 (dry run unless --execute is given)'
+        schedulable: false

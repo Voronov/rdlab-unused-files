@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="EXT:rdlab_unused_files/Resources/Private/Language/locallang.xlf" date="2026-10-29T12:00:00Z" product-name="rdlab_unused_files">
+        <header/>
+        <body>
+            <trans-unit id="module.title" resname="module.title">
+                <source>Unused files</source>
+            </trans-unit>
+            <trans-unit id="module.intro" resname="module.intro">
+                <source>Files listed here have no reference in TYPO3: no file relation (images, media, attachments), no RTE or link field pointing to them. References from outside TYPO3 (newsletters, direct links, other websites) are not known to TYPO3, so review the list before deleting.</source>
+            </trans-unit>
+            <trans-unit id="referenceIndex.updated" resname="referenceIndex.updated">
+                <source>Reference index last updated: %s</source>
+            </trans-unit>
+            <trans-unit id="referenceIndex.never" resname="referenceIndex.never">
+                <source>The reference index has never been updated. The list is not reliable until "typo3 referenceindex:update" has been run.</source>
+            </trans-unit>
+            <trans-unit id="referenceIndex.stale" resname="referenceIndex.stale">
+                <source>The reference index was last updated on %s, which is older than %d hours. Run "typo3 referenceindex:update" before deleting files.</source>
+            </trans-unit>
+            <trans-unit id="filter.title" resname="filter.title">
+                <source>Filter</source>
+            </trans-unit>
+            <trans-unit id="filter.storage" resname="filter.storage">
+                <source>Storage</source>
+            </trans-unit>
+            <trans-unit id="filter.storage.all" resname="filter.storage.all">
+                <source>All storages</source>
+            </trans-unit>
+            <trans-unit id="filter.folder" resname="filter.folder">
+                <source>Folder</source>
+            </trans-unit>
+            <trans-unit id="filter.folder.all" resname="filter.folder.all">
+                <source>All storages (select a folder in the tree to narrow the list)</source>
+            </trans-unit>
+            <trans-unit id="summary.scope" resname="summary.scope">
+                <source>Folder %s including subfolders.</source>
+            </trans-unit>
+            <trans-unit id="summary.scope.all" resname="summary.scope.all">
+                <source>All storages, select a folder in the tree to narrow the list.</source>
+            </trans-unit>
+            <trans-unit id="filter.extension" resname="filter.extension">
+                <source>File type</source>
+            </trans-unit>
+            <trans-unit id="filter.extension.all" resname="filter.extension.all">
+                <source>All types</source>
+            </trans-unit>
+            <trans-unit id="filter.minAgeDays" resname="filter.minAgeDays">
+                <source>Older than (days)</source>
+            </trans-unit>
+            <trans-unit id="filter.search" resname="filter.search">
+                <source>File name contains</source>
+            </trans-unit>
+            <trans-unit id="filter.itemsPerPage" resname="filter.itemsPerPage">
+                <source>Per page</source>
+            </trans-unit>
+            <trans-unit id="filter.apply" resname="filter.apply">
+                <source>Apply filter</source>
+            </trans-unit>
+            <trans-unit id="filter.reset" resname="filter.reset">
+                <source>Reset</source>
+            </trans-unit>
+            <trans-unit id="summary" resname="summary">
+                <source>%s unused files, %s in total</source>
+            </trans-unit>
+            <trans-unit id="summary.excluded" resname="summary.excluded">
+                <source>Excluded folders: %s</source>
+            </trans-unit>
+            <trans-unit id="list.empty" resname="list.empty">
+                <source>No unused files found for the current filter.</source>
+            </trans-unit>
+            <trans-unit id="list.toggleAll" resname="list.toggleAll">
+                <source>Select all files on this page</source>
+            </trans-unit>
+            <trans-unit id="list.file" resname="list.file">
+                <source>File</source>
+            </trans-unit>
+            <trans-unit id="list.folder" resname="list.folder">
+                <source>Folder</source>
+            </trans-unit>
+            <trans-unit id="list.type" resname="list.type">
+                <source>Type</source>
+            </trans-unit>
+            <trans-unit id="list.size" resname="list.size">
+                <source>Size</source>
+            </trans-unit>
+            <trans-unit id="list.created" resname="list.created">
+                <source>Uploaded</source>
+            </trans-unit>
+            <trans-unit id="list.modified" resname="list.modified">
+                <source>Modified</source>
+            </trans-unit>
+            <trans-unit id="list.status" resname="list.status">
+                <source>Status</source>
+            </trans-unit>
+            <trans-unit id="list.status.unreferenced" resname="list.status.unreferenced">
+                <source>No references</source>
+            </trans-unit>
+            <trans-unit id="list.openFile" resname="list.openFile">
+                <source>Open file in a new tab</source>
+            </trans-unit>
+            <trans-unit id="list.showFolder" resname="list.showFolder">
+                <source>Show folder in the file list</source>
+            </trans-unit>
+            <trans-unit id="delete.single" resname="delete.single">
+                <source>Delete file</source>
+            </trans-unit>
+            <trans-unit id="delete.single.confirm" resname="delete.single.confirm">
+                <source>Delete the file "%s"? This cannot be undone unless the storage has a _recycler_ folder.</source>
+            </trans-unit>
+            <trans-unit id="delete.selected" resname="delete.selected">
+                <source>Delete selected</source>
+            </trans-unit>
+            <trans-unit id="delete.selected.confirm" resname="delete.selected.confirm">
+                <source>Delete %d selected files? Each file is checked again for references right before it is deleted.</source>
+            </trans-unit>
+            <trans-unit id="delete.all.confirm" resname="delete.all.confirm">
+                <source>Delete all %d files matching the current filter? At most %d files are deleted per run, repeat the action for the rest. Each file is checked again for references right before it is deleted.</source>
+            </trans-unit>
+            <trans-unit id="selection.page" resname="selection.page">
+                <source>All %d files on this page are selected.</source>
+            </trans-unit>
+            <trans-unit id="selection.selectAll" resname="selection.selectAll">
+                <source>Select all %d files matching the filter</source>
+            </trans-unit>
+            <trans-unit id="selection.all" resname="selection.all">
+                <source>All %d files matching the filter are selected.</source>
+            </trans-unit>
+            <trans-unit id="selection.clear" resname="selection.clear">
+                <source>Clear selection</source>
+            </trans-unit>
+            <trans-unit id="delete.confirm.title" resname="delete.confirm.title">
+                <source>Please confirm</source>
+            </trans-unit>
+            <trans-unit id="delete.confirm.ok" resname="delete.confirm.ok">
+                <source>Yes, delete</source>
+            </trans-unit>
+            <trans-unit id="delete.confirm.cancel" resname="delete.confirm.cancel">
+                <source>Cancel</source>
+            </trans-unit>
+            <trans-unit id="pagination.first" resname="pagination.first">
+                <source>First page</source>
+            </trans-unit>
+            <trans-unit id="pagination.previous" resname="pagination.previous">
+                <source>Previous page</source>
+            </trans-unit>
+            <trans-unit id="pagination.next" resname="pagination.next">
+                <source>Next page</source>
+            </trans-unit>
+            <trans-unit id="pagination.last" resname="pagination.last">
+                <source>Last page</source>
+            </trans-unit>
+            <trans-unit id="pagination.info" resname="pagination.info">
+                <source>Page %s of %s</source>
+            </trans-unit>
+            <trans-unit id="button.csv" resname="button.csv">
+                <source>Download CSV</source>
+            </trans-unit>
+            <trans-unit id="button.reload" resname="button.reload">
+                <source>Reload</source>
+            </trans-unit>
+            <trans-unit id="message.nothingSelected" resname="message.nothingSelected">
+                <source>No files were selected.</source>
+            </trans-unit>
+            <trans-unit id="message.deleted.title" resname="message.deleted.title">
+                <source>%d files removed</source>
+            </trans-unit>
+            <trans-unit id="message.deleted" resname="message.deleted">
+                <source>%d deleted, %d moved to the recycler folder.</source>
+            </trans-unit>
+            <trans-unit id="message.skipped" resname="message.skipped">
+                <source>%d files were skipped because they are referenced by now or no longer exist.</source>
+            </trans-unit>
+            <trans-unit id="message.failed.title" resname="message.failed.title">
+                <source>%d files could not be deleted</source>
+            </trans-unit>
+            <trans-unit id="message.remaining" resname="message.remaining">
+                <source>%d more files match the filter. At most %d files are deleted per run, repeat "Delete all" for the rest.</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

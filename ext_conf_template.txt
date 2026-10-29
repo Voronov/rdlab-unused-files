@@ -1,0 +1,11 @@
+# cat=basic; type=string; label=Excluded folders: Comma separated list of folder identifiers (relative to the storage root). Files below these folders are never listed or deleted.
+excludedFolders = /_processed_/,/_temp_/,/_recycler_/
+
+# cat=basic; type=string; label=Excluded file names: Comma separated list of exact file names that are never listed or deleted.
+excludedFileNames = index.html,.htaccess
+
+# cat=basic; type=int+; label=Bulk delete limit: Maximum number of files deleted per "Delete all" request in the backend module. Repeat the action for the rest.
+bulkDeleteLimit = 200
+
+# cat=basic; type=int+; label=Reference index max age (hours): The module shows a warning when the reference index is older than this.
+referenceIndexMaxAgeHours = 24
