@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['82', '83']
+    container: ghcr.io/typo3/core-testing-php${{ matrix.php }}:latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: composer install --no-interaction --no-progress
+      - run: composer test:unit
+      - run: composer test:functional
+        env:
+          typo3DatabaseDriver: pdo_sqlite

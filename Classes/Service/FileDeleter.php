@@ -31,16 +31,16 @@ final class FileDeleter implements LoggerAwareInterface
 
     public function delete(int $fileUid): DeleteResult
     {
-        if (!$this->finder->isUnreferenced($fileUid)) {
-            return new DeleteResult($fileUid, '', DeleteOutcome::SkippedReferenced);
-        }
-
         try {
             $file = $this->resourceFactory->getFileObject($fileUid);
         } catch (FileDoesNotExistException) {
             return new DeleteResult($fileUid, '', DeleteOutcome::SkippedNotFound);
         }
         $identifier = $file->getCombinedIdentifier();
+
+        if (!$this->finder->isUnreferenced($fileUid)) {
+            return new DeleteResult($fileUid, $identifier, DeleteOutcome::SkippedReferenced);
+        }
 
         try {
             $file->getStorage()->deleteFile($file);

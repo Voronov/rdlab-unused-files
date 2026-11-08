@@ -72,6 +72,17 @@ Extension configuration (`Admin Tools > Settings > Extension Configuration > rdl
 
 The same values can be set in `config/system/settings.php` or a YAML configuration under `EXTENSIONS/rdlab_unused_files`.
 
+## Tests
+
+Unit and functional tests use `typo3/testing-framework`; functional tests run against SQLite.
+The TYPO3 core testing image provides all required PHP extensions:
+
+```bash
+docker run --rm -v "$PWD":/app -w /app ghcr.io/typo3/core-testing-php83:latest composer install
+docker run --rm -v "$PWD":/app -w /app ghcr.io/typo3/core-testing-php83:latest composer test:unit
+docker run --rm -v "$PWD":/app -w /app -e typo3DatabaseDriver=pdo_sqlite ghcr.io/typo3/core-testing-php83:latest composer test:functional
+```
+
 ## License
 
 GPL-2.0-or-later

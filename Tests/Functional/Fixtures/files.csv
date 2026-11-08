@@ -1,0 +1,26 @@
+"sys_file_storage"
+,"uid","pid","name","driver","configuration","is_browsable","is_public","is_writable","is_online","is_default"
+,1,0,"fileadmin","Local","<?xml version=""1.0"" encoding=""utf-8"" standalone=""yes"" ?><T3FlexForms><data><sheet index=""sDEF""><language index=""lDEF""><field index=""basePath""><value index=""vDEF"">fileadmin/</value></field><field index=""pathType""><value index=""vDEF"">relative</value></field><field index=""caseSensitive""><value index=""vDEF"">1</value></field></language></sheet></data></T3FlexForms>",1,1,1,1,1
+,2,0,"second","Local","<?xml version=""1.0"" encoding=""utf-8"" standalone=""yes"" ?><T3FlexForms><data><sheet index=""sDEF""><language index=""lDEF""><field index=""basePath""><value index=""vDEF"">fileadmin/</value></field><field index=""pathType""><value index=""vDEF"">relative</value></field><field index=""caseSensitive""><value index=""vDEF"">1</value></field></language></sheet></data></T3FlexForms>",1,1,1,1,0
+"sys_file"
+,"uid","pid","storage","identifier","identifier_hash","folder_hash","name","extension","mime_type","size","missing","creation_date","modification_date"
+,1,0,1,"/user_upload/unused.pdf","h1","f1","unused.pdf","pdf","application/pdf",100,0,4102444800,4102444800
+,2,0,1,"/user_upload/metadata-only.jpg","h2","f1","metadata-only.jpg","jpg","image/jpeg",200,0,4102444800,4102444800
+,3,0,1,"/user_upload/linked.pdf","h3","f1","linked.pdf","pdf","application/pdf",400,0,4102444800,4102444800
+,4,0,1,"/user_upload/fal.jpg","h4","f1","fal.jpg","jpg","image/jpeg",800,0,4102444800,4102444800
+,5,0,1,"/user_upload/deleted-ref.png","h5","f1","deleted-ref.png","png","image/png",50,0,4102444800,4102444800
+,6,0,1,"/_processed_/thumb.png","h6","f2","thumb.png","png","image/png",10,0,4102444800,4102444800
+,7,0,1,"/user_upload/index.html","h7","f1","index.html","html","text/html",5,0,4102444800,4102444800
+,8,0,1,"/user_upload/missing.pdf","h8","f1","missing.pdf","pdf","application/pdf",20,1,4102444800,4102444800
+,9,0,0,"/fileadmin/legacy.pdf","h9","f3","legacy.pdf","pdf","application/pdf",30,0,4102444800,4102444800
+,10,0,1,"/other/Old_Report.pdf","h10","f4","Old_Report.pdf","pdf","application/pdf",1000,0,1,1
+,11,0,2,"/docs/second.pdf","h11","f5","second.pdf","pdf","application/pdf",300,0,4102444800,4102444800
+"sys_refindex"
+,"hash","tablename","recuid","field","ref_table","ref_uid"
+,"r1","sys_file_metadata",1,"file","sys_file",2
+,"r2","tt_content",1,"bodytext","sys_file",3
+,"r3","sys_file_metadata",2,"file","sys_file",1
+"sys_file_reference"
+,"uid","pid","uid_local","uid_foreign","tablenames","fieldname","deleted"
+,1,1,4,1,"tt_content","image",0
+,2,1,5,1,"tt_content","image",1
