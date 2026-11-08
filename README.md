@@ -85,13 +85,17 @@ The same values can be set in `config/system/settings.php` or a YAML configurati
 
 ## Tests
 
-Unit and functional tests use `typo3/testing-framework`; functional tests run against SQLite.
-The TYPO3 core testing image provides all required PHP extensions:
+Unit and functional tests use `typo3/testing-framework`; functional tests run against SQLite
+(CI runs them on SQLite and MariaDB, on PHP 8.2 to 8.4). `test:cgl` checks the TYPO3 coding
+standards (`fix:cgl` applies them), `test:phpstan` runs PHPStan at level 8. The TYPO3 core
+testing image provides all required PHP extensions:
 
 ```bash
 docker run --rm -v "$PWD":/app -w /app ghcr.io/typo3/core-testing-php83:latest composer install
 docker run --rm -v "$PWD":/app -w /app ghcr.io/typo3/core-testing-php83:latest composer test:unit
 docker run --rm -v "$PWD":/app -w /app -e typo3DatabaseDriver=pdo_sqlite ghcr.io/typo3/core-testing-php83:latest composer test:functional
+docker run --rm -v "$PWD":/app -w /app ghcr.io/typo3/core-testing-php83:latest composer test:cgl
+docker run --rm -v "$PWD":/app -w /app ghcr.io/typo3/core-testing-php83:latest composer test:phpstan
 ```
 
 ## License

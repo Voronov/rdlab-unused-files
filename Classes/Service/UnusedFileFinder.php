@@ -129,7 +129,7 @@ final class UnusedFileFinder
             ->executeQuery()
             ->fetchFirstColumn();
 
-        return array_values(array_unique(array_map(static fn ($extension): string => strtolower((string)$extension), $rows)));
+        return array_values(array_unique(array_map(static fn($extension): string => strtolower((string)$extension), $rows)));
     }
 
     private function selectFileColumns(QueryBuilder $queryBuilder): void

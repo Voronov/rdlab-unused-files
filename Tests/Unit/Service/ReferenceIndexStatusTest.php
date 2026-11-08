@@ -20,7 +20,7 @@ final class ReferenceIndexStatusTest extends UnitTestCase
 
         $extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
         $extensionConfiguration->method('get')->willReturnCallback(
-            static fn (string $extension, string $path): mixed => $path === 'referenceIndexMaxAgeHours' ? $maxAgeHours : ''
+            static fn(string $extension, string $path): mixed => $path === 'referenceIndexMaxAgeHours' ? $maxAgeHours : ''
         );
 
         return new ReferenceIndexStatus($registry, new ExtensionSettings($extensionConfiguration));

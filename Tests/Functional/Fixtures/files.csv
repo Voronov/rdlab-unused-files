@@ -17,6 +17,8 @@
 ,11,0,2,"/docs/second.pdf","h11","f5","second.pdf","pdf","application/pdf",300,0,2147483647,2147483647
 ,12,0,1,"/user_upload/by-path.pdf","h12","f1","by-path.pdf","pdf","application/pdf",60,0,2147483647,2147483647
 ,13,0,2,"/docs/by-url.pdf","h13","f5","by-url.pdf","pdf","application/pdf",70,0,2147483647,2147483647
+,14,0,1,"/user_upload/Über uns_2024.pdf","h14","f1","Über uns_2024.pdf","pdf","application/pdf",80,0,2147483647,2147483647
+,15,0,1,"/user_upload/report_2024.pdf","h15","f1","report_2024.pdf","pdf","application/pdf",90,0,2147483647,2147483647
 "sys_refindex"
 ,"hash","tablename","recuid","field","ref_table","ref_uid","ref_string"
 ,"r1","sys_file_metadata",1,"file","sys_file",2,""
@@ -24,6 +26,8 @@
 ,"r3","sys_file_metadata",2,"file","sys_file",1,""
 ,"r4","tt_content",2,"bodytext","_STRING",0,"fileadmin/user_upload/by-path.pdf"
 ,"r5","tt_content",3,"header_link","_STRING",0,"https://www.example.com/fileadmin/docs/by-url.pdf"
+,"r6","tt_content",4,"bodytext","_STRING",0,"https://www.example.com/fileadmin/user_upload/Über uns_2024.pdf"
+,"r7","tt_content",5,"header_link","_STRING",0,"fileadmin/user_upload/report-2024.pdf"
 "sys_file_reference"
 ,"uid","pid","uid_local","uid_foreign","tablenames","fieldname","deleted"
 ,1,1,4,1,"tt_content","image",0

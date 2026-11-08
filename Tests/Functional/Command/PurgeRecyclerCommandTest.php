@@ -35,9 +35,9 @@ final class PurgeRecyclerCommandTest extends FunctionalTestCase
      */
     private function remainingFileUids(): array
     {
-        return array_map('intval', $this->get(ConnectionPool::class)->getConnectionForTable('sys_file')
+        return array_values(array_map('intval', $this->get(ConnectionPool::class)->getConnectionForTable('sys_file')
             ->select(['uid'], 'sys_file', [], [], ['uid' => 'ASC'])
-            ->fetchFirstColumn());
+            ->fetchFirstColumn()));
     }
 
     #[Test]

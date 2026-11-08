@@ -19,7 +19,7 @@ final class ExtensionSettingsTest extends UnitTestCase
     {
         $extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
         $extensionConfiguration->method('get')->willReturnCallback(
-            static fn (string $extension, string $path): mixed => $values[$path] ?? ''
+            static fn(string $extension, string $path): mixed => $values[$path] ?? ''
         );
         return new ExtensionSettings($extensionConfiguration);
     }

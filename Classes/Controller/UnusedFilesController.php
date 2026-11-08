@@ -144,14 +144,14 @@ final class UnusedFilesController
             }
             $remaining = max(0, $this->finder->countMatching($filter)['count'] - count($uids));
         }
-        $uids = array_values(array_unique(array_filter($uids, static fn (int $uid): bool => $uid > 0)));
+        $uids = array_values(array_unique(array_filter($uids, static fn(int $uid): bool => $uid > 0)));
 
         if ($uids === []) {
             $view->addFlashMessage($this->translate('message.nothingSelected'), '', ContextualFeedbackSeverity::WARNING);
             return $this->redirectToList($filter, $folderId);
         }
 
-        $counts = array_fill_keys(array_map(static fn (DeleteOutcome $outcome): string => $outcome->value, DeleteOutcome::cases()), 0);
+        $counts = array_fill_keys(array_map(static fn(DeleteOutcome $outcome): string => $outcome->value, DeleteOutcome::cases()), 0);
         $failures = [];
         foreach ($uids as $uid) {
             $result = $this->fileDeleter->delete($uid);
@@ -276,6 +276,9 @@ final class UnusedFilesController
         ];
     }
 
+    /**
+     * @param array<string, mixed> $additionalArguments
+     */
     private function listUri(UnusedFileFilter $filter, string $folderId, array $additionalArguments = []): string
     {
         $arguments = $additionalArguments;

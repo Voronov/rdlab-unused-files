@@ -76,7 +76,7 @@ final class DeleteCommand extends Command
         if (!$execute) {
             $io->table(
                 ['uid', 'path', 'size', 'created'],
-                array_map(static fn (array $row): array => [
+                array_map(static fn(array $row): array => [
                     (int)$row['uid'],
                     (string)$row['identifier'],
                     GeneralUtility::formatSize((int)$row['size']),
@@ -87,7 +87,7 @@ final class DeleteCommand extends Command
             return Command::SUCCESS;
         }
 
-        $counts = array_fill_keys(array_map(static fn (DeleteOutcome $outcome): string => $outcome->value, DeleteOutcome::cases()), 0);
+        $counts = array_fill_keys(array_map(static fn(DeleteOutcome $outcome): string => $outcome->value, DeleteOutcome::cases()), 0);
         $failures = [];
         $progress = $io->createProgressBar(count($candidates));
         foreach ($candidates as $row) {

@@ -91,7 +91,7 @@ final class FileDeleter implements LoggerAwareInterface
             SystemLogType::FILE,
             SystemLogFileAction::DELETE,
             SystemLogErrorClassification::MESSAGE,
-            0,
+            null,
             $outcome === DeleteOutcome::Deleted
                 ? $what . ' "%s" deleted (EXT:rdlab_unused_files)'
                 : $what . ' "%s" moved to recycler (EXT:rdlab_unused_files)',

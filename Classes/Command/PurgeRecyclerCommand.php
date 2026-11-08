@@ -53,7 +53,7 @@ final class PurgeRecyclerCommand extends Command
         if (!$execute) {
             $io->table(
                 ['uid', 'path', 'size', 'in recycler since'],
-                array_map(static fn (array $row): array => [
+                array_map(static fn(array $row): array => [
                     (int)$row['uid'],
                     (string)$row['identifier'],
                     GeneralUtility::formatSize((int)$row['size']),

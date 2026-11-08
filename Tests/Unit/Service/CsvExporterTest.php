@@ -11,6 +11,9 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 final class CsvExporterTest extends UnitTestCase
 {
+    /**
+     * @return iterable<string, array<mixed>>
+     */
     public static function folderOfDataProvider(): iterable
     {
         yield 'file in root' => ['/file.pdf', '/'];

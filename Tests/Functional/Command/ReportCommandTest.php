@@ -28,12 +28,15 @@ final class ReportCommandTest extends FunctionalTestCase
     }
 
     /**
-     * @return list<list<string>>
+     * @return list<list<string|null>>
      */
     private function readCsv(string $delimiter = ','): array
     {
         $rows = [];
         $handle = fopen($this->outputFile, 'rb');
+        if ($handle === false) {
+            self::fail('Cannot open ' . $this->outputFile);
+        }
         while (($row = fgetcsv($handle, null, $delimiter, '"', '\\')) !== false) {
             $rows[] = $row;
         }
@@ -53,7 +56,7 @@ final class ReportCommandTest extends FunctionalTestCase
         self::assertSame(['uid', 'storage', 'path', 'folder', 'name', 'extension', 'size_bytes', 'created', 'modified', 'public_url', 'status'], $rows[0]);
         self::assertSame(['11', '10', '2', '1'], array_column(array_slice($rows, 1), 0));
         self::assertSame(['1', '1', '/user_upload/unused.pdf', '/user_upload/', 'unused.pdf', 'pdf', '100'], array_slice($rows[4], 0, 7));
-        self::assertStringStartsWith('No references in TYPO3', $rows[4][10]);
+        self::assertStringStartsWith('No references in TYPO3', (string)$rows[4][10]);
         self::assertStringContainsString('4 unused files', $this->commandTester->getDisplay());
         self::assertStringNotContainsString('Run "referenceindex:update" first', $this->commandTester->getDisplay());
     }

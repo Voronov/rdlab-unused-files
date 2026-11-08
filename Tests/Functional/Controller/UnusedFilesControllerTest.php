@@ -65,7 +65,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     /**
      * Query arguments of the redirect target, without the CSRF token.
      *
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     private function redirectArguments(ResponseInterface $response): array
     {

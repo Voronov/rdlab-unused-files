@@ -80,6 +80,31 @@ final class FileDeleterTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function deletionFailureIsReported(): void
+    {
+        $this->get(ConnectionPool::class)->getConnectionForTable('sys_file_storage')
+            ->update('sys_file_storage', ['is_writable' => 0], ['uid' => 1]);
+
+        $result = $this->get(FileDeleter::class)->delete(1);
+
+        self::assertSame(DeleteOutcome::Failed, $result->outcome);
+        self::assertSame('1:/user_upload/unused.pdf', $result->identifier);
+        self::assertSame('You are not allowed to delete the file "/user_upload/unused.pdf"', $result->message);
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+    }
+
+    #[Test]
+    public function fileMissingOnDiskIsRemovedFromTheIndex(): void
+    {
+        unlink($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+
+        $result = $this->get(FileDeleter::class)->delete(1);
+
+        self::assertSame(DeleteOutcome::Deleted, $result->outcome);
+        self::assertSame(0, $this->get(ConnectionPool::class)->getConnectionForTable('sys_file')->count('uid', 'sys_file', ['uid' => 1]));
+    }
+
+    #[Test]
     public function fileInExcludedFolderIsSkipped(): void
     {
         self::assertSame(DeleteOutcome::SkippedReferenced, $this->get(FileDeleter::class)->delete(6)->outcome);

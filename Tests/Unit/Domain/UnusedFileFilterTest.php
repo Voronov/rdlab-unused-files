@@ -26,6 +26,9 @@ final class UnusedFileFilterTest extends UnitTestCase
         self::assertFalse($filter->isActive());
     }
 
+    /**
+     * @return iterable<string, array<mixed>>
+     */
     public static function folderDataProvider(): iterable
     {
         yield 'empty' => ['', ''];
@@ -43,6 +46,9 @@ final class UnusedFileFilterTest extends UnitTestCase
         self::assertSame($expected, UnusedFileFilter::fromArray(['folder' => $input])->folder);
     }
 
+    /**
+     * @return iterable<string, array<mixed>>
+     */
     public static function extensionDataProvider(): iterable
     {
         yield 'plain' => ['pdf', 'pdf'];
@@ -102,6 +108,9 @@ final class UnusedFileFilterTest extends UnitTestCase
         self::assertSame(1, $filter->withPage(-1)->page);
     }
 
+    /**
+     * @return iterable<string, array<mixed>>
+     */
     public static function combinedFolderIdentifierDataProvider(): iterable
     {
         yield 'storage root' => ['1:/', 1, ''];
@@ -154,6 +163,9 @@ final class UnusedFileFilterTest extends UnitTestCase
         self::assertEquals($filter, UnusedFileFilter::fromArray($filter->toArray()));
     }
 
+    /**
+     * @return iterable<string, array<mixed>>
+     */
     public static function activeFilterDataProvider(): iterable
     {
         yield 'storage' => [new UnusedFileFilter(storage: 1)];
