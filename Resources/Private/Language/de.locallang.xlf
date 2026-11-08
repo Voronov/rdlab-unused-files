@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" target-language="de" datatype="plaintext" original="EXT:rdlab_unused_files/Resources/Private/Language/locallang.xlf" date="2026-11-08T12:00:00Z" product-name="rdlab_unused_files">
+        <header/>
+        <body>
+            <trans-unit id="module.title" resname="module.title">
+                <source>Unused files</source>
+                <target>Ungenutzte Dateien</target>
+            </trans-unit>
+            <trans-unit id="module.intro" resname="module.intro">
+                <source>Files listed here have no reference in TYPO3: no file relation (images, media, attachments), no RTE or link field pointing to them. References from outside TYPO3 (newsletters, direct links, other websites) and folder based usage (file collections of type "folder", TypoScript FILES with folders, plugins reading a folder) are not known to TYPO3, so review the list before deleting.</source>
+                <target>Die hier aufgeführten Dateien werden in TYPO3 nirgends referenziert: keine Dateirelation (Bilder, Medien, Anhänge), kein RTE- oder Linkfeld verweist auf sie. Verwendungen außerhalb von TYPO3 (Newsletter, direkte Links, andere Websites) sowie ordnerbasierte Verwendungen (Dateisammlungen vom Typ „Ordner“, TypoScript FILES mit folders, Plugins, die einen Ordner auslesen) kennt TYPO3 nicht. Prüfen Sie die Liste daher vor dem Löschen.</target>
+            </trans-unit>
+            <trans-unit id="referenceIndex.updated" resname="referenceIndex.updated">
+                <source>Reference index last updated: %s</source>
+                <target>Referenzindex zuletzt aktualisiert: %s</target>
+            </trans-unit>
+            <trans-unit id="referenceIndex.never" resname="referenceIndex.never">
+                <source>The reference index has never been updated. The list is not reliable until "typo3 referenceindex:update" has been run.</source>
+                <target>Der Referenzindex wurde noch nie aktualisiert. Die Liste ist erst verlässlich, nachdem „typo3 referenceindex:update“ ausgeführt wurde.</target>
+            </trans-unit>
+            <trans-unit id="referenceIndex.stale" resname="referenceIndex.stale">
+                <source>The reference index was last updated on %s, which is older than %d hours. Run "typo3 referenceindex:update" before deleting files.</source>
+                <target>Der Referenzindex wurde zuletzt am %s aktualisiert und ist damit älter als %d Stunden. Führen Sie vor dem Löschen „typo3 referenceindex:update“ aus.</target>
+            </trans-unit>
+            <trans-unit id="filter.title" resname="filter.title">
+                <source>Filter</source>
+                <target>Filter</target>
+            </trans-unit>
+            <trans-unit id="filter.storage" resname="filter.storage">
+                <source>Storage</source>
+                <target>Speicher</target>
+            </trans-unit>
+            <trans-unit id="filter.storage.all" resname="filter.storage.all">
+                <source>All storages</source>
+                <target>Alle Speicher</target>
+            </trans-unit>
+            <trans-unit id="filter.folder" resname="filter.folder">
+                <source>Folder</source>
+                <target>Ordner</target>
+            </trans-unit>
+            <trans-unit id="filter.folder.all" resname="filter.folder.all">
+                <source>All storages (select a folder in the tree to narrow the list)</source>
+                <target>Alle Speicher (wählen Sie im Baum einen Ordner, um die Liste einzuschränken)</target>
+            </trans-unit>
+            <trans-unit id="summary.scope" resname="summary.scope">
+                <source>Folder %s including subfolders.</source>
+                <target>Ordner %s einschließlich Unterordner.</target>
+            </trans-unit>
+            <trans-unit id="summary.scope.all" resname="summary.scope.all">
+                <source>All storages, select a folder in the tree to narrow the list.</source>
+                <target>Alle Speicher. Wählen Sie im Baum einen Ordner, um die Liste einzuschränken.</target>
+            </trans-unit>
+            <trans-unit id="filter.extension" resname="filter.extension">
+                <source>File type</source>
+                <target>Dateityp</target>
+            </trans-unit>
+            <trans-unit id="filter.extension.all" resname="filter.extension.all">
+                <source>All types</source>
+                <target>Alle Typen</target>
+            </trans-unit>
+            <trans-unit id="filter.minAgeDays" resname="filter.minAgeDays">
+                <source>Older than (days)</source>
+                <target>Älter als (Tage)</target>
+            </trans-unit>
+            <trans-unit id="filter.search" resname="filter.search">
+                <source>File name contains</source>
+                <target>Dateiname enthält</target>
+            </trans-unit>
+            <trans-unit id="filter.itemsPerPage" resname="filter.itemsPerPage">
+                <source>Per page</source>
+                <target>Pro Seite</target>
+            </trans-unit>
+            <trans-unit id="filter.apply" resname="filter.apply">
+                <source>Apply filter</source>
+                <target>Filter anwenden</target>
+            </trans-unit>
+            <trans-unit id="filter.reset" resname="filter.reset">
+                <source>Reset</source>
+                <target>Zurücksetzen</target>
+            </trans-unit>
+            <trans-unit id="summary" resname="summary">
+                <source>%s unused files, %s in total</source>
+                <target>%s ungenutzte Dateien, insgesamt %s</target>
+            </trans-unit>
+            <trans-unit id="summary.excluded" resname="summary.excluded">
+                <source>Excluded folders: %s</source>
+                <target>Ausgeschlossene Ordner: %s</target>
+            </trans-unit>
+            <trans-unit id="list.empty" resname="list.empty">
+                <source>No unused files found for the current filter.</source>
+                <target>Für den aktuellen Filter wurden keine ungenutzten Dateien gefunden.</target>
+            </trans-unit>
+            <trans-unit id="list.toggleAll" resname="list.toggleAll">
+                <source>Select all files on this page</source>
+                <target>Alle Dateien auf dieser Seite auswählen</target>
+            </trans-unit>
+            <trans-unit id="list.file" resname="list.file">
+                <source>File</source>
+                <target>Datei</target>
+            </trans-unit>
+            <trans-unit id="list.folder" resname="list.folder">
+                <source>Folder</source>
+                <target>Ordner</target>
+            </trans-unit>
+            <trans-unit id="list.type" resname="list.type">
+                <source>Type</source>
+                <target>Typ</target>
+            </trans-unit>
+            <trans-unit id="list.size" resname="list.size">
+                <source>Size</source>
+                <target>Größe</target>
+            </trans-unit>
+            <trans-unit id="list.created" resname="list.created">
+                <source>Uploaded</source>
+                <target>Hochgeladen</target>
+            </trans-unit>
+            <trans-unit id="list.modified" resname="list.modified">
+                <source>Modified</source>
+                <target>Geändert</target>
+            </trans-unit>
+            <trans-unit id="list.status" resname="list.status">
+                <source>Status</source>
+                <target>Status</target>
+            </trans-unit>
+            <trans-unit id="list.status.unreferenced" resname="list.status.unreferenced">
+                <source>No references</source>
+                <target>Keine Referenzen</target>
+            </trans-unit>
+            <trans-unit id="list.openFile" resname="list.openFile">
+                <source>Open file in a new tab</source>
+                <target>Datei in neuem Tab öffnen</target>
+            </trans-unit>
+            <trans-unit id="list.showFolder" resname="list.showFolder">
+                <source>Show folder in the file list</source>
+                <target>Ordner in der Dateiliste anzeigen</target>
+            </trans-unit>
+            <trans-unit id="delete.single" resname="delete.single">
+                <source>Delete file</source>
+                <target>Datei löschen</target>
+            </trans-unit>
+            <trans-unit id="delete.single.confirm" resname="delete.single.confirm">
+                <source>Delete the file "%s"? This cannot be undone unless the storage has a _recycler_ folder.</source>
+                <target>Datei „%s“ löschen? Dies lässt sich nur rückgängig machen, wenn der Speicher einen Ordner _recycler_ hat.</target>
+            </trans-unit>
+            <trans-unit id="delete.selected" resname="delete.selected">
+                <source>Delete selected</source>
+                <target>Auswahl löschen</target>
+            </trans-unit>
+            <trans-unit id="delete.selected.confirm" resname="delete.selected.confirm">
+                <source>Delete %d selected files? Each file is checked again for references right before it is deleted.</source>
+                <target>%d ausgewählte Dateien löschen? Jede Datei wird unmittelbar vor dem Löschen erneut auf Referenzen geprüft.</target>
+            </trans-unit>
+            <trans-unit id="delete.all.confirm" resname="delete.all.confirm">
+                <source>Delete all %d files matching the current filter? At most %d files are deleted per run, repeat the action for the rest. Each file is checked again for references right before it is deleted.</source>
+                <target>Alle %d Dateien löschen, die dem aktuellen Filter entsprechen? Pro Durchlauf werden höchstens %d Dateien gelöscht, wiederholen Sie die Aktion für den Rest. Jede Datei wird unmittelbar vor dem Löschen erneut auf Referenzen geprüft.</target>
+            </trans-unit>
+            <trans-unit id="selection.page" resname="selection.page">
+                <source>All %d files on this page are selected.</source>
+                <target>Alle %d Dateien auf dieser Seite sind ausgewählt.</target>
+            </trans-unit>
+            <trans-unit id="selection.selectAll" resname="selection.selectAll">
+                <source>Select all %d files matching the filter</source>
+                <target>Alle %d Dateien auswählen, die dem Filter entsprechen</target>
+            </trans-unit>
+            <trans-unit id="selection.all" resname="selection.all">
+                <source>All %d files matching the filter are selected.</source>
+                <target>Alle %d Dateien, die dem Filter entsprechen, sind ausgewählt.</target>
+            </trans-unit>
+            <trans-unit id="selection.clear" resname="selection.clear">
+                <source>Clear selection</source>
+                <target>Auswahl aufheben</target>
+            </trans-unit>
+            <trans-unit id="delete.confirm.title" resname="delete.confirm.title">
+                <source>Please confirm</source>
+                <target>Bitte bestätigen</target>
+            </trans-unit>
+            <trans-unit id="delete.confirm.ok" resname="delete.confirm.ok">
+                <source>Yes, delete</source>
+                <target>Ja, löschen</target>
+            </trans-unit>
+            <trans-unit id="delete.confirm.cancel" resname="delete.confirm.cancel">
+                <source>Cancel</source>
+                <target>Abbrechen</target>
+            </trans-unit>
+            <trans-unit id="pagination.first" resname="pagination.first">
+                <source>First page</source>
+                <target>Erste Seite</target>
+            </trans-unit>
+            <trans-unit id="pagination.previous" resname="pagination.previous">
+                <source>Previous page</source>
+                <target>Vorherige Seite</target>
+            </trans-unit>
+            <trans-unit id="pagination.next" resname="pagination.next">
+                <source>Next page</source>
+                <target>Nächste Seite</target>
+            </trans-unit>
+            <trans-unit id="pagination.last" resname="pagination.last">
+                <source>Last page</source>
+                <target>Letzte Seite</target>
+            </trans-unit>
+            <trans-unit id="pagination.info" resname="pagination.info">
+                <source>Page %s of %s</source>
+                <target>Seite %s von %s</target>
+            </trans-unit>
+            <trans-unit id="button.csv" resname="button.csv">
+                <source>Download CSV</source>
+                <target>CSV herunterladen</target>
+            </trans-unit>
+            <trans-unit id="button.reload" resname="button.reload">
+                <source>Reload</source>
+                <target>Neu laden</target>
+            </trans-unit>
+            <trans-unit id="message.nothingSelected" resname="message.nothingSelected">
+                <source>No files were selected.</source>
+                <target>Es wurden keine Dateien ausgewählt.</target>
+            </trans-unit>
+            <trans-unit id="message.deleted.title" resname="message.deleted.title">
+                <source>%d files removed</source>
+                <target>%d Dateien entfernt</target>
+            </trans-unit>
+            <trans-unit id="message.deleted" resname="message.deleted">
+                <source>%d deleted, %d moved to the recycler folder.</source>
+                <target>%d gelöscht, %d in den Ordner _recycler_ verschoben.</target>
+            </trans-unit>
+            <trans-unit id="message.skipped" resname="message.skipped">
+                <source>%d files were skipped because they are referenced by now or no longer exist.</source>
+                <target>%d Dateien wurden übersprungen, weil sie inzwischen referenziert werden oder nicht mehr existieren.</target>
+            </trans-unit>
+            <trans-unit id="message.failed.title" resname="message.failed.title">
+                <source>%d files could not be deleted</source>
+                <target>%d Dateien konnten nicht gelöscht werden</target>
+            </trans-unit>
+            <trans-unit id="message.remaining" resname="message.remaining">
+                <source>%d more files match the filter. At most %d files are deleted per run, repeat "Delete all" for the rest.</source>
+                <target>%d weitere Dateien entsprechen dem Filter. Pro Durchlauf werden höchstens %d Dateien gelöscht, wiederholen Sie „Alle löschen“ für den Rest.</target>
+            </trans-unit>
+            <trans-unit id="message.staleIndex" resname="message.staleIndex">
+                <source>The reference index is older than %d hours. Run "typo3 referenceindex:update" before deleting all matching files.</source>
+                <target>Der Referenzindex ist älter als %d Stunden. Führen Sie „typo3 referenceindex:update“ aus, bevor Sie alle passenden Dateien löschen.</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

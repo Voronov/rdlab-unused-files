@@ -5,6 +5,7 @@ TYPO3 13 extension that finds FAL files which are not referenced anywhere in TYP
 - **Backend module** `File > Unused files`: filterable, paginated list with upload date, size, folder and a direct link to the file. Files can be deleted one by one, as a selection or all at once, each behind a confirmation dialog.
 - **CSV report** via CLI (`rdlab:unusedfiles:report`), also usable as a scheduler task.
 - **CLI deletion** (`rdlab:unusedfiles:delete`), dry run by default.
+- **Recycler cleanup** (`rdlab:unusedfiles:purgerecycler`) removes files that have been in a `_recycler_` folder for a while, also usable as a scheduler task.
 
 ## How "unused" is determined
 
@@ -37,7 +38,7 @@ Afterwards flush caches and open `File > Unused files`. The module is available 
    vendor/bin/typo3 referenceindex:update
    ```
    The module and both commands warn when the index is older than the configured maximum age (default 24 hours), and the delete command refuses to run with `--execute` in that case. A scheduler task for `referenceindex:update` is recommended.
-3. **Create a `_recycler_` folder** in the storage root (`fileadmin/_recycler_`). FAL then moves deleted files there instead of removing them, so a deletion can be undone until the recycler is emptied.
+3. **Create a `_recycler_` folder** in the storage root (`fileadmin/_recycler_`). FAL then moves deleted files there instead of removing them, so a deletion can be undone until the recycler is emptied. TYPO3 never empties it by itself; `rdlab:unusedfiles:purgerecycler --execute` (see CLI, works as a scheduler task) deletes files that have been in a `_recycler_` folder for at least `--min-age-days` days, default 30.
 
 ## Backend module
 
@@ -46,6 +47,7 @@ Afterwards flush caches and open `File > Unused files`. The module is available 
 - "Download CSV" in the doc header exports the current filter.
 - Selection works like in a mail client: the header checkbox selects the page, a banner then offers to select all files matching the filter. Deleting the whole selection processes at most `bulkDeleteLimit` files per request (default 200) and tells you how many are left.
 - Every file is checked again for references immediately before it is deleted, so a file that was referenced after the list was rendered is skipped.
+- "Delete all" is refused while the reference index is older than `referenceIndexMaxAgeHours`.
 - Deletions are logged to the TYPO3 system log (`Log` module).
 
 ## CLI
@@ -60,6 +62,10 @@ vendor/bin/typo3 rdlab:unusedfiles:report --output=/tmp/unused.csv --folder=/use
 # Dry run, then delete
 vendor/bin/typo3 rdlab:unusedfiles:delete --folder=/user_upload/ --min-age-days=365
 vendor/bin/typo3 rdlab:unusedfiles:delete --folder=/user_upload/ --min-age-days=365 --execute
+
+# Permanently delete files that have been in a _recycler_ folder for 30 days or more
+vendor/bin/typo3 rdlab:unusedfiles:purgerecycler --min-age-days=30
+vendor/bin/typo3 rdlab:unusedfiles:purgerecycler --min-age-days=30 --execute
 ```
 
 CSV columns: `uid, storage, path, folder, name, extension, size_bytes, created, modified, public_url, status`. The `status` column states that no reference exists as of the reference index update time.

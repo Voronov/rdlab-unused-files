@@ -10,6 +10,7 @@ use RDLAB\UnusedFiles\Domain\DeleteOutcome;
 use RDLAB\UnusedFiles\Domain\DeleteResult;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\SysLog\Action\File as SystemLogFileAction;
 use TYPO3\CMS\Core\SysLog\Error as SystemLogErrorClassification;
@@ -36,27 +37,51 @@ final class FileDeleter implements LoggerAwareInterface
         } catch (FileDoesNotExistException) {
             return new DeleteResult($fileUid, '', DeleteOutcome::SkippedNotFound);
         }
-        $identifier = $file->getCombinedIdentifier();
 
         if (!$this->finder->isUnreferenced($fileUid)) {
-            return new DeleteResult($fileUid, $identifier, DeleteOutcome::SkippedReferenced);
+            return new DeleteResult($fileUid, $file->getCombinedIdentifier(), DeleteOutcome::SkippedReferenced);
         }
 
+        return $this->remove($file, 'Unused file');
+    }
+
+    /**
+     * Permanently deletes a file that lies in a _recycler_ folder: FAL never
+     * moves a file from a recycler folder into another one.
+     */
+    public function purgeFromRecycler(int $fileUid): DeleteResult
+    {
+        try {
+            $file = $this->resourceFactory->getFileObject($fileUid);
+        } catch (FileDoesNotExistException) {
+            return new DeleteResult($fileUid, '', DeleteOutcome::SkippedNotFound);
+        }
+
+        if (!RecyclerFinder::isInRecycler($file->getIdentifier())) {
+            return new DeleteResult($fileUid, $file->getCombinedIdentifier(), DeleteOutcome::SkippedReferenced, 'not in a recycler folder');
+        }
+
+        return $this->remove($file, 'Recycled file');
+    }
+
+    private function remove(File $file, string $what): DeleteResult
+    {
+        $identifier = $file->getCombinedIdentifier();
         try {
             $file->getStorage()->deleteFile($file);
         } catch (\Throwable $exception) {
-            $this->logger?->error('Deleting unused file failed', ['file' => $identifier, 'exception' => $exception]);
-            return new DeleteResult($fileUid, $identifier, DeleteOutcome::Failed, $exception->getMessage());
+            $this->logger?->error('Deleting file failed', ['file' => $identifier, 'exception' => $exception]);
+            return new DeleteResult($file->getUid(), $identifier, DeleteOutcome::Failed, $exception->getMessage());
         }
 
         $outcome = $file->isDeleted() ? DeleteOutcome::Deleted : DeleteOutcome::MovedToRecycler;
-        $this->logger?->info('Unused file removed', ['file' => $identifier, 'outcome' => $outcome->value]);
-        $this->writeSystemLog($identifier, $outcome);
+        $this->logger?->info($what . ' removed', ['file' => $identifier, 'outcome' => $outcome->value]);
+        $this->writeSystemLog($what, $identifier, $outcome);
 
-        return new DeleteResult($fileUid, $identifier, $outcome);
+        return new DeleteResult($file->getUid(), $identifier, $outcome);
     }
 
-    private function writeSystemLog(string $identifier, DeleteOutcome $outcome): void
+    private function writeSystemLog(string $what, string $identifier, DeleteOutcome $outcome): void
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
         if (!$backendUser instanceof BackendUserAuthentication) {
@@ -68,8 +93,8 @@ final class FileDeleter implements LoggerAwareInterface
             SystemLogErrorClassification::MESSAGE,
             0,
             $outcome === DeleteOutcome::Deleted
-                ? 'Unused file "%s" deleted (EXT:rdlab_unused_files)'
-                : 'Unused file "%s" moved to recycler (EXT:rdlab_unused_files)',
+                ? $what . ' "%s" deleted (EXT:rdlab_unused_files)'
+                : $what . ' "%s" moved to recycler (EXT:rdlab_unused_files)',
             [$identifier]
         );
     }

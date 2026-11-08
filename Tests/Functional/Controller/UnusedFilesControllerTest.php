@@ -15,6 +15,7 @@ use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -187,6 +188,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     public function deleteAllRemovesMatchingFilesUpToBulkLimit(): void
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['rdlab_unused_files']['bulkDeleteLimit'] = '1';
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
 
         $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['action' => 'deleteSelected', 'selectAll' => '1']);
 
@@ -203,6 +205,32 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
             '1 more files match the filter. At most 1 files are deleted per run, repeat "Delete all" for the rest.',
             $messages[1]->getMessage()
         );
+    }
+
+    #[Test]
+    public function deleteAllIsRefusedWithStaleReferenceIndex(): void
+    {
+        $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['action' => 'deleteSelected', 'selectAll' => '1']);
+
+        self::assertSame(303, $response->getStatusCode());
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/metadata-only.jpg');
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        $messages = $this->flashMessages();
+        self::assertCount(1, $messages);
+        self::assertSame(ContextualFeedbackSeverity::ERROR, $messages[0]->getSeverity());
+        self::assertSame(
+            'The reference index is older than 24 hours. Run "typo3 referenceindex:update" before deleting all matching files.',
+            $messages[0]->getMessage()
+        );
+    }
+
+    #[Test]
+    public function deleteSingleWorksWithStaleReferenceIndex(): void
+    {
+        $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+
+        self::assertSame(303, $response->getStatusCode());
+        self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unused.pdf');
     }
 
     #[Test]

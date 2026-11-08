@@ -69,6 +69,17 @@ final class FileDeleterTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function purgeFromRecyclerSkipsFilesOutsideRecyclerFolders(): void
+    {
+        $result = $this->get(FileDeleter::class)->purgeFromRecycler(1);
+
+        self::assertSame(DeleteOutcome::SkippedReferenced, $result->outcome);
+        self::assertSame('not in a recycler folder', $result->message);
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertSame(DeleteOutcome::SkippedNotFound, $this->get(FileDeleter::class)->purgeFromRecycler(999)->outcome);
+    }
+
+    #[Test]
     public function fileInExcludedFolderIsSkipped(): void
     {
         self::assertSame(DeleteOutcome::SkippedReferenced, $this->get(FileDeleter::class)->delete(6)->outcome);

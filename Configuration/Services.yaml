@@ -20,3 +20,10 @@ services:
         command: 'rdlab:unusedfiles:delete'
         description: 'Delete FAL files that are not referenced anywhere in TYPO3 (dry run unless --execute is given)'
         schedulable: false
+
+  RDLAB\UnusedFiles\Command\PurgeRecyclerCommand:
+    tags:
+      - name: console.command
+        command: 'rdlab:unusedfiles:purgerecycler'
+        description: 'Permanently delete files that have been in a _recycler_ folder for a while (dry run unless --execute is given)'
+        schedulable: true

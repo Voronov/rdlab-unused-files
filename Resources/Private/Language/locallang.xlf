@@ -177,6 +177,9 @@
             <trans-unit id="message.remaining" resname="message.remaining">
                 <source>%d more files match the filter. At most %d files are deleted per run, repeat "Delete all" for the rest.</source>
             </trans-unit>
+            <trans-unit id="message.staleIndex" resname="message.staleIndex">
+                <source>The reference index is older than %d hours. Run "typo3 referenceindex:update" before deleting all matching files.</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

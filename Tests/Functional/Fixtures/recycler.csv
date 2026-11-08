@@ -1,0 +1,10 @@
+"sys_file_storage"
+,"uid","pid","name","driver","configuration","is_browsable","is_public","is_writable","is_online","is_default"
+,1,0,"fileadmin","Local","<?xml version=""1.0"" encoding=""utf-8"" standalone=""yes"" ?><T3FlexForms><data><sheet index=""sDEF""><language index=""lDEF""><field index=""basePath""><value index=""vDEF"">fileadmin/</value></field><field index=""pathType""><value index=""vDEF"">relative</value></field><field index=""caseSensitive""><value index=""vDEF"">1</value></field></language></sheet></data></T3FlexForms>",1,1,1,1,1
+"sys_file"
+,"uid","pid","storage","identifier","identifier_hash","folder_hash","name","extension","mime_type","size","missing","tstamp"
+,1,0,1,"/user_upload/_recycler_/old.pdf","h1","f1","old.pdf","pdf","application/pdf",100,0,1700000000
+,2,0,1,"/user_upload/_recycler_/new.pdf","h2","f1","new.pdf","pdf","application/pdf",200,0,2147483647
+,3,0,1,"/user_upload/kept.pdf","h3","f2","kept.pdf","pdf","application/pdf",300,0,1700000000
+,4,0,1,"/_recycler_/root-old.jpg","h4","f3","root-old.jpg","jpg","image/jpeg",400,0,1700000000
+,5,0,1,"/xrecyclerx/trap.pdf","h5","f4","trap.pdf","pdf","application/pdf",500,0,1700000000

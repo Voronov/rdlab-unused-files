@@ -13,10 +13,25 @@ jobs:
       matrix:
         php: ['82', '83']
     container: ghcr.io/typo3/core-testing-php${{ matrix.php }}:latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        options: --health-cmd "mariadb-admin ping -uroot -proot" --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@v4
       - run: composer install --no-interaction --no-progress
       - run: composer test:unit
-      - run: composer test:functional
+      - name: Functional tests (SQLite)
+        run: composer test:functional
         env:
           typo3DatabaseDriver: pdo_sqlite
+      - name: Functional tests (MariaDB)
+        run: composer test:functional
+        env:
+          typo3DatabaseDriver: mysqli
+          typo3DatabaseHost: mariadb
+          typo3DatabaseUsername: root
+          typo3DatabasePassword: root
+          typo3DatabaseName: functional

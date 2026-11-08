@@ -123,9 +123,19 @@ final class UnusedFilesController
         $remaining = 0;
 
         $selectAll = (string)($body['selectAll'] ?? '0') === '1';
+        $bulk = $action === 'deleteAll' || ($action === 'deleteSelected' && $selectAll);
+        $view = $this->moduleTemplateFactory->create($request);
+        if ($bulk && $this->referenceIndexStatus->isStale()) {
+            $view->addFlashMessage(
+                $this->translate('message.staleIndex', [$this->settings->getReferenceIndexMaxAgeHours()]),
+                '',
+                ContextualFeedbackSeverity::ERROR
+            );
+            return $this->redirectToList($filter, $folderId);
+        }
         if ($action === 'deleteSingle') {
             $uids = [(int)($body['deleteSingle'] ?? 0)];
-        } elseif ($action === 'deleteSelected' && !$selectAll) {
+        } elseif (!$bulk) {
             $uids = array_map('intval', (array)($body['files'] ?? []));
         } else {
             // "Delete all matching files": in batches of bulkDeleteLimit
@@ -136,7 +146,6 @@ final class UnusedFilesController
         }
         $uids = array_values(array_unique(array_filter($uids, static fn (int $uid): bool => $uid > 0)));
 
-        $view = $this->moduleTemplateFactory->create($request);
         if ($uids === []) {
             $view->addFlashMessage($this->translate('message.nothingSelected'), '', ContextualFeedbackSeverity::WARNING);
             return $this->redirectToList($filter, $folderId);
