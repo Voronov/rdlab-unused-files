@@ -7,7 +7,7 @@
                 <source>Unused files</source>
             </trans-unit>
             <trans-unit id="module.intro" resname="module.intro">
-                <source>Files listed here have no reference in TYPO3: no file relation (images, media, attachments), no RTE or link field pointing to them. References from outside TYPO3 (newsletters, direct links, other websites) are not known to TYPO3, so review the list before deleting.</source>
+                <source>Files listed here have no reference in TYPO3: no file relation (images, media, attachments), no RTE or link field pointing to them. References from outside TYPO3 (newsletters, direct links, other websites) and folder based usage (file collections of type "folder", TypoScript FILES with folders, plugins reading a folder) are not known to TYPO3, so review the list before deleting.</source>
             </trans-unit>
             <trans-unit id="referenceIndex.updated" resname="referenceIndex.updated">
                 <source>Reference index last updated: %s</source>

@@ -34,15 +34,16 @@ final class UnusedFileFinderTest extends FunctionalTestCase
     #[Test]
     public function findAllReturnsOnlyUnreferencedFilesOrderedByIdentifier(): void
     {
-        // 1 unused, 2 metadata reference only, 5 deleted file reference only, 10 unused, 11 unused in storage 2;
-        // 3 refindex, 4 live file reference, 6 excluded folder, 7 excluded name, 8 missing, 9 storage 0 are left out
-        self::assertSame([11, 10, 5, 2, 1], $this->findUids(new UnusedFileFilter()));
+        // 1 unused, 2 metadata reference only, 10 unused, 11 unused in storage 2; left out: 3 refindex,
+        // 4 file reference, 5 soft deleted file reference, 6 excluded folder, 7 excluded name, 8 missing,
+        // 9 storage 0, 12 referenced by path, 13 referenced by URL
+        self::assertSame([11, 10, 2, 1], $this->findUids(new UnusedFileFilter()));
     }
 
     #[Test]
     public function countMatchingReturnsCountAndTotalSize(): void
     {
-        self::assertSame(['count' => 5, 'size' => 1650], $this->get(UnusedFileFinder::class)->countMatching(new UnusedFileFilter()));
+        self::assertSame(['count' => 4, 'size' => 1600], $this->get(UnusedFileFinder::class)->countMatching(new UnusedFileFilter()));
     }
 
     #[Test]
@@ -58,13 +59,13 @@ final class UnusedFileFinderTest extends FunctionalTestCase
     public function filterByStorage(): void
     {
         self::assertSame([11], $this->findUids(new UnusedFileFilter(storage: 2)));
-        self::assertSame([10, 5, 2, 1], $this->findUids(new UnusedFileFilter(storage: 1)));
+        self::assertSame([10, 2, 1], $this->findUids(new UnusedFileFilter(storage: 1)));
     }
 
     #[Test]
     public function filterByFolder(): void
     {
-        self::assertSame([5, 2, 1], $this->findUids(new UnusedFileFilter(folder: '/user_upload/')));
+        self::assertSame([2, 1], $this->findUids(new UnusedFileFilter(folder: '/user_upload/')));
     }
 
     #[Test]
@@ -83,7 +84,7 @@ final class UnusedFileFinderTest extends FunctionalTestCase
     public function filterBySearchMatchesPartOfTheName(): void
     {
         self::assertSame([10], $this->findUids(new UnusedFileFilter(search: 'report')));
-        self::assertSame([5], $this->findUids(new UnusedFileFilter(search: 'deleted-')));
+        self::assertSame([2], $this->findUids(new UnusedFileFilter(search: 'metadata')));
     }
 
     #[Test]
@@ -109,7 +110,7 @@ final class UnusedFileFinderTest extends FunctionalTestCase
         $finder = $this->get(UnusedFileFinder::class);
 
         $page = $finder->findPage(new UnusedFileFilter(page: 1, itemsPerPage: 25));
-        self::assertCount(5, $page);
+        self::assertCount(4, $page);
         self::assertSame('second', $page[0]['storage_name']);
         self::assertSame('/docs/second.pdf', $page[0]['identifier']);
 
@@ -125,7 +126,7 @@ final class UnusedFileFinderTest extends FunctionalTestCase
         ];
 
         // the default exclusions no longer apply, so the processed file and index.html are listed now
-        self::assertSame([6, 11, 5, 7, 2], $this->findUids(new UnusedFileFilter()));
+        self::assertSame([6, 11, 7, 2], $this->findUids(new UnusedFileFilter()));
     }
 
     #[Test]
@@ -134,9 +135,12 @@ final class UnusedFileFinderTest extends FunctionalTestCase
         $finder = $this->get(UnusedFileFinder::class);
 
         self::assertTrue($finder->isUnreferenced(1));
-        self::assertTrue($finder->isUnreferenced(5));
+        self::assertTrue($finder->isUnreferenced(2), 'metadata reference only');
         self::assertFalse($finder->isUnreferenced(3), 'referenced in sys_refindex');
-        self::assertFalse($finder->isUnreferenced(4), 'live file reference');
+        self::assertFalse($finder->isUnreferenced(4), 'file reference');
+        self::assertFalse($finder->isUnreferenced(5), 'soft deleted file reference');
+        self::assertFalse($finder->isUnreferenced(12), 'referenced by path');
+        self::assertFalse($finder->isUnreferenced(13), 'referenced by URL');
         self::assertFalse($finder->isUnreferenced(6), 'excluded folder');
         self::assertFalse($finder->isUnreferenced(7), 'excluded file name');
         self::assertFalse($finder->isUnreferenced(8), 'missing file');

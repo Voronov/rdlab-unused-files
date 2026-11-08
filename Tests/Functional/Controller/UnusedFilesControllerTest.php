@@ -91,7 +91,8 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
         $html = (string)$response->getBody();
         self::assertStringContainsString('unused.pdf', $html);
         self::assertStringContainsString('metadata-only.jpg', $html);
-        self::assertStringContainsString('deleted-ref.png', $html);
+        self::assertStringNotContainsString('deleted-ref.png', $html);
+        self::assertStringNotContainsString('by-path.pdf', $html);
         self::assertStringNotContainsString('linked.pdf', $html);
         self::assertStringNotContainsString('Old_Report.pdf', $html);
         self::assertStringNotContainsString('second.pdf', $html);
@@ -185,21 +186,21 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     #[Test]
     public function deleteAllRemovesMatchingFilesUpToBulkLimit(): void
     {
-        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['rdlab_unused_files']['bulkDeleteLimit'] = '2';
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['rdlab_unused_files']['bulkDeleteLimit'] = '1';
 
         $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['action' => 'deleteSelected', 'selectAll' => '1']);
 
         self::assertSame(303, $response->getStatusCode());
-        // the folder holds three unused files, ordered by identifier the first two are deleted
-        self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/deleted-ref.png');
+        // the folder holds two unused files, ordered by identifier the first one is deleted
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/metadata-only.jpg');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/deleted-ref.png');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/linked.pdf');
         $messages = $this->flashMessages();
         self::assertCount(2, $messages);
-        self::assertSame('2 files removed', $messages[0]->getTitle());
+        self::assertSame('1 files removed', $messages[0]->getTitle());
         self::assertSame(
-            '1 more files match the filter. At most 2 files are deleted per run, repeat "Delete all" for the rest.',
+            '1 more files match the filter. At most 1 files are deleted per run, repeat "Delete all" for the rest.',
             $messages[1]->getMessage()
         );
     }
@@ -215,5 +216,13 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
         self::assertCount(1, $messages);
         self::assertSame(ContextualFeedbackSeverity::WARNING, $messages[0]->getSeverity());
         self::assertSame('No files were selected.', $messages[0]->getMessage());
+    }
+
+    #[Test]
+    public function moduleIsNotAvailableForNonAdminUsers(): void
+    {
+        $editor = $this->setUpBackendUser(2);
+
+        self::assertNull($this->get(ModuleProvider::class)->getModule(self::ROUTE, $editor));
     }
 }

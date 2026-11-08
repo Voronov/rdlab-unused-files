@@ -8,14 +8,15 @@ TYPO3 13 extension that finds FAL files which are not referenced anywhere in TYP
 
 ## How "unused" is determined
 
-A file is listed when **both** of the following are true:
+A file is listed when **all** of the following are true:
 
 1. `sys_refindex` has no entry pointing to the file, apart from the `sys_file_metadata` record every file owns. The reference index covers FAL relations, RTE links (`t3://file?uid=...`), link fields and all other soft references TYPO3 knows about.
-2. `sys_file_reference` has no live (`deleted = 0`) row for the file. This also keeps files that are only attached to hidden or soft-deleted records, so restoring such a record from the recycler keeps working.
+2. `sys_file_reference` has no row for the file, soft-deleted rows included: a content element in the recycler can be restored together with its file relations. Run `cleanup:deletedrecords` (EXT:lowlevel) first if those files should show up.
+3. `sys_refindex` has no string reference (`ref_table = _STRING`) ending with the file path, e.g. an absolute URL to the file in an RTE text or a link field.
 
 Files in `_processed_`, `_temp_` and `_recycler_` (configurable), files marked as missing and the configured file names (`index.html`, `.htaccess`) are never listed or deleted.
 
-**What TYPO3 cannot know:** files that are only used by hard-coded paths in templates, TypoScript or CSS, by newsletters, by direct URLs on other websites or by search engines. Review the list folder by folder before deleting and keep a `_recycler_` folder (see below).
+**What TYPO3 cannot know:** files that are only used by hard-coded paths in templates, TypoScript or CSS, by folder based usage (file collections of type "folder", TypoScript `FILES` with `folders`, plugins that read a folder directly), by newsletters, by direct URLs on other websites or by search engines. Add such folders to `excludedFolders`, review the list folder by folder before deleting and keep a `_recycler_` folder (see below).
 
 ## Installation
 
@@ -23,16 +24,20 @@ Files in `_processed_`, `_temp_` and `_recycler_` (configurable), files marked a
 composer require rdlab/unused-files
 ```
 
-Afterwards flush caches and open `File > Unused files`. Non-admin users need access to the module (backend group, "Modules") and the usual file permissions; FAL applies file mounts and the `deleteFile` permission on every deletion.
+Afterwards flush caches and open `File > Unused files`. The module is available to admin users only: the list covers all storages regardless of file mounts.
 
 ## Before you use it
 
-1. **Update the reference index**, otherwise the list is incomplete:
+1. **Optional: purge deleted records**, so that files which are only attached to records in the recycler show up:
+   ```bash
+   vendor/bin/typo3 cleanup:deletedrecords
+   ```
+2. **Update the reference index**, otherwise the list is incomplete:
    ```bash
    vendor/bin/typo3 referenceindex:update
    ```
    The module and both commands warn when the index is older than the configured maximum age (default 24 hours), and the delete command refuses to run with `--execute` in that case. A scheduler task for `referenceindex:update` is recommended.
-2. **Create a `_recycler_` folder** in the storage root (`fileadmin/_recycler_`). FAL then moves deleted files there instead of removing them, so a deletion can be undone until the recycler is emptied.
+3. **Create a `_recycler_` folder** in the storage root (`fileadmin/_recycler_`). FAL then moves deleted files there instead of removing them, so a deletion can be undone until the recycler is emptied.
 
 ## Backend module
 

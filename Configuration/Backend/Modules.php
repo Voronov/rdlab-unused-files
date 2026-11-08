@@ -6,7 +6,7 @@ return [
     'file_rdlab_unused_files' => [
         'parent' => 'file',
         'position' => ['after' => 'media_management'],
-        'access' => 'user',
+        'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/file/rdlab-unused-files',
         'iconIdentifier' => 'rdlab-unused-files-module',

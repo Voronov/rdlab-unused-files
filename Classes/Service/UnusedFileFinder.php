@@ -14,7 +14,9 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  *
  * A file counts as referenced when it has at least one row in sys_refindex
  * (FAL relations, RTE links, link fields, ... - except the sys_file_metadata
- * self reference every file has) or at least one live sys_file_reference row.
+ * self reference every file has), at least one sys_file_reference row (soft
+ * deleted ones included, their parent record may be restored from the recycler)
+ * or a sys_refindex string reference ending with its path.
  */
 final class UnusedFileFinder
 {
@@ -206,6 +208,9 @@ final class UnusedFileFinder
             );
         }
 
+        // last: a correlated subquery, evaluated for the rows that are still left
+        $queryBuilder->andWhere('NOT EXISTS (' . $this->stringReferenceSubQuery($queryBuilder) . ')');
+
         return $queryBuilder;
     }
 
@@ -222,13 +227,31 @@ final class UnusedFileFinder
     }
 
     /**
-     * All sys_file uids with a live FAL relation. This also covers relations
-     * whose parent record is deleted or hidden, which the reference index skips.
+     * All sys_file uids with a FAL relation, soft deleted ones included: the
+     * reference index skips deleted records, but a content element in the
+     * recycler can be restored together with its file relations. Run
+     * "cleanup:deletedrecords" to get rid of them for good.
      */
     private function fileReferenceSubQuery(QueryBuilder $queryBuilder): string
     {
         return 'SELECT ' . $queryBuilder->quoteIdentifier('fr.uid_local')
-            . ' FROM ' . $queryBuilder->quoteIdentifier('sys_file_reference') . ' ' . $queryBuilder->quoteIdentifier('fr')
-            . ' WHERE ' . $queryBuilder->quoteIdentifier('fr.deleted') . ' = 0';
+            . ' FROM ' . $queryBuilder->quoteIdentifier('sys_file_reference') . ' ' . $queryBuilder->quoteIdentifier('fr');
+    }
+
+    /**
+     * References by path instead of uid, e.g. an absolute URL to the file in an
+     * RTE text or a link field: sys_refindex stores them as "_STRING" rows with
+     * the path in ref_string. Matched as suffix of ref_string without escaping,
+     * so "_" in a file name matches any character, which can only mark more
+     * files as referenced.
+     */
+    private function stringReferenceSubQuery(QueryBuilder $queryBuilder): string
+    {
+        $platform = $queryBuilder->getConnection()->getDatabasePlatform();
+        return 'SELECT 1'
+            . ' FROM ' . $queryBuilder->quoteIdentifier('sys_refindex') . ' ' . $queryBuilder->quoteIdentifier('sr')
+            . ' WHERE ' . $queryBuilder->quoteIdentifier('sr.ref_table') . ' = ' . $queryBuilder->createNamedParameter('_STRING')
+            . ' AND ' . $queryBuilder->quoteIdentifier('sr.ref_string') . ' LIKE '
+            . $platform->getConcatExpression($queryBuilder->createNamedParameter('%'), $queryBuilder->quoteIdentifier('f.identifier'));
     }
 }
