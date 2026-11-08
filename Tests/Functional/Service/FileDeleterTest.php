@@ -47,6 +47,11 @@ final class FileDeleterTest extends FunctionalTestCase
         self::assertSame(DeleteOutcome::MovedToRecycler, $result->outcome);
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unused.pdf');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/_recycler_/unused.pdf');
+        // the moved file is indexed again at its new place, FAL removed the old entry
+        $identifiers = $this->get(ConnectionPool::class)->getConnectionForTable('sys_file')
+            ->select(['identifier'], 'sys_file', ['storage' => 1, 'name' => 'unused.pdf'])
+            ->fetchFirstColumn();
+        self::assertSame(['/user_upload/_recycler_/unused.pdf'], $identifiers);
     }
 
     #[Test]

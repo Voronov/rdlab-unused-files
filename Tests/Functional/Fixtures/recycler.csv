@@ -3,8 +3,8 @@
 ,1,0,"fileadmin","Local","<?xml version=""1.0"" encoding=""utf-8"" standalone=""yes"" ?><T3FlexForms><data><sheet index=""sDEF""><language index=""lDEF""><field index=""basePath""><value index=""vDEF"">fileadmin/</value></field><field index=""pathType""><value index=""vDEF"">relative</value></field><field index=""caseSensitive""><value index=""vDEF"">1</value></field></language></sheet></data></T3FlexForms>",1,1,1,1,1
 "sys_file"
 ,"uid","pid","storage","identifier","identifier_hash","folder_hash","name","extension","mime_type","size","missing","tstamp"
-,1,0,1,"/user_upload/_recycler_/old.pdf","h1","f1","old.pdf","pdf","application/pdf",100,0,1700000000
-,2,0,1,"/user_upload/_recycler_/new.pdf","h2","f1","new.pdf","pdf","application/pdf",200,0,2147483647
-,3,0,1,"/user_upload/kept.pdf","h3","f2","kept.pdf","pdf","application/pdf",300,0,1700000000
-,4,0,1,"/_recycler_/root-old.jpg","h4","f3","root-old.jpg","jpg","image/jpeg",400,0,1700000000
-,5,0,1,"/xrecyclerx/trap.pdf","h5","f4","trap.pdf","pdf","application/pdf",500,0,1700000000
+,1,0,1,"/user_upload/_recycler_/old.pdf","1a561d1c915234702c6b1daf9bab6dce9d3b6873","f1","old.pdf","pdf","application/pdf",100,0,1700000000
+,2,0,1,"/user_upload/_recycler_/new.pdf","cee653680b73a3cfd88d148f5d552dc84b243899","f1","new.pdf","pdf","application/pdf",200,0,2147483647
+,3,0,1,"/user_upload/kept.pdf","57366adb476d366f412ce6841f6c60a8a98dd496","f2","kept.pdf","pdf","application/pdf",300,0,1700000000
+,4,0,1,"/_recycler_/root-old.jpg","1199e679b00974365fb9bb62f107fbae0dea9021","f3","root-old.jpg","jpg","image/jpeg",400,0,1700000000
+,5,0,1,"/xrecyclerx/trap.pdf","8a2bd9aa5cab3605536cbbc91fa4b3fe91529632","f4","trap.pdf","pdf","application/pdf",500,0,1700000000

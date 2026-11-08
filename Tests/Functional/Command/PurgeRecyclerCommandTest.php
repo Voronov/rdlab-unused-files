@@ -23,7 +23,8 @@ final class PurgeRecyclerCommandTest extends FunctionalTestCase
         parent::setUp();
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/recycler.csv');
         GeneralUtility::rmdir($this->instancePath . '/fileadmin', true);
-        foreach (['user_upload/_recycler_/old.pdf', 'user_upload/_recycler_/new.pdf', 'user_upload/kept.pdf', '_recycler_/root-old.jpg'] as $path) {
+        // unindexed.pdf has no sys_file row, like a file an editor deleted in the file list
+        foreach (['user_upload/_recycler_/old.pdf', 'user_upload/_recycler_/new.pdf', 'user_upload/kept.pdf', '_recycler_/root-old.jpg', 'user_upload/_recycler_/unindexed.pdf'] as $path) {
             GeneralUtility::mkdir_deep(dirname($this->instancePath . '/fileadmin/' . $path));
             file_put_contents($this->instancePath . '/fileadmin/' . $path, $path);
         }
@@ -52,6 +53,18 @@ final class PurgeRecyclerCommandTest extends FunctionalTestCase
         self::assertStringNotContainsString('new.pdf', $display);
         self::assertStringContainsString('Dry run: 2 files would be deleted permanently', $display);
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/_recycler_/old.pdf');
+        // the unindexed file got an index entry dated now, so it is not expired yet
+        self::assertSame([1, 2, 3, 4, 5, 6], $this->remainingFileUids());
+    }
+
+    #[Test]
+    public function unindexedRecyclerFilesAreIndexedAndListed(): void
+    {
+        $this->commandTester->execute(['--min-age-days' => '0']);
+
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('/user_upload/_recycler_/unindexed.pdf', $display);
+        self::assertStringContainsString('Dry run: 3 files would be deleted permanently', $display);
     }
 
     #[Test]
@@ -65,7 +78,7 @@ final class PurgeRecyclerCommandTest extends FunctionalTestCase
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/_recycler_/root-old.jpg');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/_recycler_/new.pdf');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/kept.pdf');
-        self::assertSame([2, 3, 5], $this->remainingFileUids());
+        self::assertSame([2, 3, 5, 6], $this->remainingFileUids());
     }
 
     #[Test]

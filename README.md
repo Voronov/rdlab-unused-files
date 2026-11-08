@@ -38,7 +38,7 @@ Afterwards flush caches and open `File > Unused files`. The module is available 
    vendor/bin/typo3 referenceindex:update
    ```
    The module and both commands warn when the index is older than the configured maximum age (default 24 hours), and the delete command refuses to run with `--execute` in that case. A scheduler task for `referenceindex:update` is recommended.
-3. **Create a `_recycler_` folder** in the storage root (`fileadmin/_recycler_`). FAL then moves deleted files there instead of removing them, so a deletion can be undone until the recycler is emptied. TYPO3 never empties it by itself; `rdlab:unusedfiles:purgerecycler --execute` (see CLI, works as a scheduler task) deletes files that have been in a `_recycler_` folder for at least `--min-age-days` days, default 30.
+3. **Create a `_recycler_` folder** in the storage root (`fileadmin/_recycler_`). FAL then moves deleted files there instead of removing them, so a deletion can be undone until the recycler is emptied. TYPO3 never empties it by itself; `rdlab:unusedfiles:purgerecycler --execute` (see CLI, works as a scheduler task) deletes files that have been in a `_recycler_` folder for at least `--min-age-days` days, default 30. The command indexes the recycler folders on every run: a file this extension moved there counts from the move, a file deleted in the file list counts from the first run that saw it, so run it daily.
 
 ## Backend module
 

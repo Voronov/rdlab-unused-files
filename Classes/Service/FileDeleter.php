@@ -75,6 +75,10 @@ final class FileDeleter implements LoggerAwareInterface
         }
 
         $outcome = $file->isDeleted() ? DeleteOutcome::Deleted : DeleteOutcome::MovedToRecycler;
+        if ($outcome === DeleteOutcome::MovedToRecycler) {
+            // FAL dropped the index entry on the move, index the file at its new place so the move date is known
+            $file->getStorage()->getFile($file->getIdentifier());
+        }
         $this->logger?->info($what . ' removed', ['file' => $identifier, 'outcome' => $outcome->value]);
         $this->writeSystemLog($what, $identifier, $outcome);
 
