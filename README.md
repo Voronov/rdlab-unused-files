@@ -13,7 +13,7 @@ A file is listed when **all** of the following are true:
 
 1. `sys_refindex` has no entry pointing to the file, apart from the `sys_file_metadata` record every file owns. The reference index covers FAL relations, RTE links (`t3://file?uid=...`), link fields and all other soft references TYPO3 knows about.
 2. `sys_file_reference` has no row for the file, soft-deleted rows included: a content element in the recycler can be restored together with its file relations. Run `cleanup:deletedrecords` (EXT:lowlevel) first if those files should show up.
-3. `sys_refindex` has no string reference (`ref_table = _STRING`) ending with the file path, e.g. an absolute URL to the file in an RTE text or a link field.
+3. `sys_refindex` has no string reference (`ref_table = _STRING`) ending with the file path, e.g. an absolute URL to the file in an RTE text or a link field (URL-encoded or not, case-insensitive).
 
 Files in `_processed_`, `_temp_` and `_recycler_` (configurable), files marked as missing and the configured file names (`index.html`, `.htaccess`) are never listed or deleted.
 

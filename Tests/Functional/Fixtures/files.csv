@@ -26,8 +26,8 @@
 ,"r3","sys_file_metadata",2,"file","sys_file",1,""
 ,"r4","tt_content",2,"bodytext","_STRING",0,"fileadmin/user_upload/by-path.pdf"
 ,"r5","tt_content",3,"header_link","_STRING",0,"https://www.example.com/fileadmin/docs/by-url.pdf"
-,"r6","tt_content",4,"bodytext","_STRING",0,"https://www.example.com/fileadmin/user_upload/Über uns_2024.pdf"
-,"r7","tt_content",5,"header_link","_STRING",0,"fileadmin/user_upload/report-2024.pdf"
+,"r6","tt_content",4,"bodytext","_STRING",0,"https://www.example.com/fileadmin/user_upload/%C3%9Cber%20uns_2024.pdf"
+,"r7","tt_content",5,"header_link","_STRING",0,"fileadmin/user_upload/Report_2024.pdf"
 "sys_file_reference"
 ,"uid","pid","uid_local","uid_foreign","tablenames","fieldname","deleted"
 ,1,1,4,1,"tt_content","image",0

@@ -149,13 +149,12 @@ final class UnusedFileFinderTest extends FunctionalTestCase
     }
 
     #[Test]
-    public function stringReferencesAreMatchedAsSuffixWithoutEscaping(): void
+    public function stringReferencesMatchEncodedAndDifferentlyCasedPaths(): void
     {
         $finder = $this->get(UnusedFileFinder::class);
 
-        self::assertFalse($finder->isUnreferenced(14), 'umlaut and space in the path');
-        // "_" in the file name is a LIKE wildcard, so the near miss "report-2024.pdf" counts as a reference
-        self::assertFalse($finder->isUnreferenced(15), 'underscore matches any character');
+        self::assertFalse($finder->isUnreferenced(14), 'URL-encoded umlaut and space');
+        self::assertFalse($finder->isUnreferenced(15), 'different case');
     }
 
     #[Test]

@@ -20,6 +20,9 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  */
 final class UnusedFileFinder
 {
+    /** @var list<int>|null */
+    private ?array $stringReferencedUids = null;
+
     public function __construct(
         private readonly ConnectionPool $connectionPool,
         private readonly ExtensionSettings $settings,
@@ -208,8 +211,15 @@ final class UnusedFileFinder
             );
         }
 
-        // last: a correlated subquery, evaluated for the rows that are still left
-        $queryBuilder->andWhere('NOT EXISTS (' . $this->stringReferenceSubQuery($queryBuilder) . ')');
+        $stringReferencedUids = $this->findStringReferencedUids();
+        if ($stringReferencedUids !== []) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->notIn(
+                    'f.uid',
+                    $queryBuilder->createNamedParameter($stringReferencedUids, Connection::PARAM_INT_ARRAY)
+                )
+            );
+        }
 
         return $queryBuilder;
     }
@@ -239,19 +249,59 @@ final class UnusedFileFinder
     }
 
     /**
-     * References by path instead of uid, e.g. an absolute URL to the file in an
-     * RTE text or a link field: sys_refindex stores them as "_STRING" rows with
-     * the path in ref_string. Matched as suffix of ref_string without escaping,
-     * so "_" in a file name matches any character, which can only mark more
-     * files as referenced.
+     * Files referenced by path instead of uid, e.g. an absolute URL to the file
+     * in an RTE text or a link field: sys_refindex stores them as "_STRING" rows
+     * with the path in ref_string. A file counts as referenced when a URL-decoded
+     * string ends with its identifier, compared case-insensitively. Matched in
+     * PHP by file name: a LIKE per file would scan all string rows for every file.
+     *
+     * @return list<int>
      */
-    private function stringReferenceSubQuery(QueryBuilder $queryBuilder): string
+    private function findStringReferencedUids(): array
     {
-        $platform = $queryBuilder->getConnection()->getDatabasePlatform();
-        return 'SELECT 1'
-            . ' FROM ' . $queryBuilder->quoteIdentifier('sys_refindex') . ' ' . $queryBuilder->quoteIdentifier('sr')
-            . ' WHERE ' . $queryBuilder->quoteIdentifier('sr.ref_table') . ' = ' . $queryBuilder->createNamedParameter('_STRING')
-            . ' AND ' . $queryBuilder->quoteIdentifier('sr.ref_string') . ' LIKE '
-            . $platform->getConcatExpression($queryBuilder->createNamedParameter('%'), $queryBuilder->quoteIdentifier('f.identifier'));
+        if ($this->stringReferencedUids !== null) {
+            return $this->stringReferencedUids;
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_refindex');
+        $queryBuilder->getRestrictions()->removeAll();
+        $strings = $queryBuilder
+            ->select('ref_string')
+            ->from('sys_refindex')
+            ->where($queryBuilder->expr()->eq('ref_table', $queryBuilder->createNamedParameter('_STRING')))
+            ->groupBy('ref_string')
+            ->executeQuery()
+            ->fetchFirstColumn();
+        $stringsByFileName = [];
+        foreach ($strings as $string) {
+            $string = mb_strtolower(rawurldecode((string)$string));
+            $fileName = strrchr($string, '/');
+            if ($fileName !== false) {
+                $stringsByFileName[$fileName][] = $string;
+            }
+        }
+        if ($stringsByFileName === []) {
+            return $this->stringReferencedUids = [];
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file');
+        $queryBuilder->getRestrictions()->removeAll();
+        $result = $queryBuilder
+            ->select('uid', 'identifier')
+            ->from('sys_file')
+            ->where($queryBuilder->expr()->gt('storage', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)))
+            ->executeQuery();
+        $uids = [];
+        while (($row = $result->fetchAssociative()) !== false) {
+            $identifier = mb_strtolower((string)$row['identifier']);
+            foreach ($stringsByFileName[(string)strrchr($identifier, '/')] ?? [] as $string) {
+                if (str_ends_with($string, $identifier)) {
+                    $uids[] = (int)$row['uid'];
+                    break;
+                }
+            }
+        }
+
+        return $this->stringReferencedUids = $uids;
     }
 }
