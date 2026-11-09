@@ -16,7 +16,8 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  * (FAL relations, RTE links, link fields, ... - except the sys_file_metadata
  * self reference every file has), at least one sys_file_reference row (soft
  * deleted ones included, their parent record may be restored from the recycler)
- * or a sys_refindex string reference ending with its path.
+ * or when its path occurs in a sys_refindex string reference or in a text
+ * field of any table, e.g. as an absolute URL in an RTE link.
  */
 final class UnusedFileFinder
 {
@@ -26,6 +27,7 @@ final class UnusedFileFinder
     public function __construct(
         private readonly ConnectionPool $connectionPool,
         private readonly ExtensionSettings $settings,
+        private readonly ContentPathScanner $contentPathScanner,
     ) {}
 
     /**
@@ -249,11 +251,12 @@ final class UnusedFileFinder
     }
 
     /**
-     * Files referenced by path instead of uid, e.g. an absolute URL to the file
-     * in an RTE text or a link field: sys_refindex stores them as "_STRING" rows
-     * with the path in ref_string. A file counts as referenced when a URL-decoded
-     * string ends with its identifier, compared case-insensitively. Matched in
-     * PHP by file name: a LIKE per file would scan all string rows for every file.
+     * Files referenced by path instead of uid: sys_refindex "_STRING" rows
+     * (ref_string holds the path) plus the paths the ContentPathScanner finds
+     * in text fields, since the reference index does not record URLs. A file
+     * counts as referenced when a URL-decoded string ends with its identifier,
+     * compared case-insensitively. Matched in PHP by file name: a LIKE per
+     * file would scan all strings for every file.
      *
      * @return list<int>
      */
@@ -272,6 +275,7 @@ final class UnusedFileFinder
             ->groupBy('ref_string')
             ->executeQuery()
             ->fetchFirstColumn();
+        $strings = array_merge($strings, $this->contentPathScanner->findPaths());
         $stringsByFileName = [];
         foreach ($strings as $string) {
             $string = mb_strtolower(rawurldecode((string)$string));

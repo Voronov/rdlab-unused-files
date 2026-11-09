@@ -158,6 +158,17 @@ final class UnusedFileFinderTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function pathsInContentFieldsCountAsReferences(): void
+    {
+        $finder = $this->get(UnusedFileFinder::class);
+
+        // none of these files has a sys_refindex row, the reference index does not record URLs
+        self::assertFalse($finder->isUnreferenced(16), 'URL in an RTE link');
+        self::assertFalse($finder->isUnreferenced(17), 'URL-encoded path with query string in pages.url');
+        self::assertFalse($finder->isUnreferenced(18), 'plain path followed by punctuation');
+    }
+
+    #[Test]
     public function getStoragesReturnsNamesByUid(): void
     {
         self::assertSame([1 => 'fileadmin', 2 => 'second'], $this->get(UnusedFileFinder::class)->getStorages());

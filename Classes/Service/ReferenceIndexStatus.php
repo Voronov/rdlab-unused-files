@@ -37,7 +37,7 @@ final class ReferenceIndexStatus
     public function getStatusText(): string
     {
         $lastUpdate = $this->getLastUpdate();
-        return 'No references in TYPO3 (sys_refindex + sys_file_reference) as of reference index update '
+        return 'No references in TYPO3 (sys_refindex, sys_file_reference, paths in content) as of reference index update '
             . ($lastUpdate === null ? 'never' : $lastUpdate->format('Y-m-d H:i'));
     }
 }
