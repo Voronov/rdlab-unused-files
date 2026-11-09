@@ -14,15 +14,19 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  *
  * A file counts as referenced when it has at least one row in sys_refindex
  * (FAL relations, RTE links, link fields, ... - except the sys_file_metadata
- * self reference every file has), at least one sys_file_reference row (soft
- * deleted ones included, their parent record may be restored from the recycler)
- * or when its path occurs in a sys_refindex string reference or in a text
- * field of any table, e.g. as an absolute URL in an RTE link.
+ * self reference every file has), at least one live sys_file_reference row or
+ * a soft deleted one whose record sits in the recycler (restoring the record
+ * restores the relation), or when its path occurs in a sys_refindex string
+ * reference or in a text field of any table, e.g. as an absolute URL in an
+ * RTE link.
  */
 final class UnusedFileFinder
 {
     /** @var list<int>|null */
     private ?array $stringReferencedUids = null;
+
+    /** @var list<int>|null */
+    private ?array $restorableReferencedUids = null;
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
@@ -213,12 +217,12 @@ final class UnusedFileFinder
             );
         }
 
-        $stringReferencedUids = $this->findStringReferencedUids();
-        if ($stringReferencedUids !== []) {
+        $referencedUids = array_merge($this->findStringReferencedUids(), $this->findRestorableReferencedUids());
+        if ($referencedUids !== []) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->notIn(
                     'f.uid',
-                    $queryBuilder->createNamedParameter($stringReferencedUids, Connection::PARAM_INT_ARRAY)
+                    $queryBuilder->createNamedParameter($referencedUids, Connection::PARAM_INT_ARRAY)
                 )
             );
         }
@@ -239,15 +243,71 @@ final class UnusedFileFinder
     }
 
     /**
-     * All sys_file uids with a FAL relation, soft deleted ones included: the
-     * reference index skips deleted records, but a content element in the
-     * recycler can be restored together with its file relations. Run
-     * "cleanup:deletedrecords" to get rid of them for good.
+     * All sys_file uids with a live FAL relation. Soft deleted relations are
+     * handled by findRestorableReferencedUids().
      */
     private function fileReferenceSubQuery(QueryBuilder $queryBuilder): string
     {
         return 'SELECT ' . $queryBuilder->quoteIdentifier('fr.uid_local')
-            . ' FROM ' . $queryBuilder->quoteIdentifier('sys_file_reference') . ' ' . $queryBuilder->quoteIdentifier('fr');
+            . ' FROM ' . $queryBuilder->quoteIdentifier('sys_file_reference') . ' ' . $queryBuilder->quoteIdentifier('fr')
+            . ' WHERE ' . $queryBuilder->quoteIdentifier('fr.deleted') . ' = 0';
+    }
+
+    /**
+     * Files whose soft deleted FAL relation belongs to a record that is itself
+     * in the recycler: the reference index skips deleted records, but restoring
+     * the record restores its file relations, so the file is still needed. A
+     * relation an editor removed from a live record does not count, nor one
+     * whose record is gone. Run "cleanup:deletedrecords" to empty the recycler.
+     *
+     * @return list<int>
+     */
+    private function findRestorableReferencedUids(): array
+    {
+        if ($this->restorableReferencedUids !== null) {
+            return $this->restorableReferencedUids;
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file_reference');
+        $queryBuilder->getRestrictions()->removeAll();
+        $result = $queryBuilder
+            ->select('uid_local', 'tablenames', 'uid_foreign')
+            ->from('sys_file_reference')
+            ->where($queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(1, Connection::PARAM_INT)))
+            ->executeQuery();
+        $fileUidsByRecord = [];
+        while (($row = $result->fetchAssociative()) !== false) {
+            $fileUidsByRecord[(string)$row['tablenames']][(int)$row['uid_foreign']][] = (int)$row['uid_local'];
+        }
+
+        $uids = [];
+        foreach ($fileUidsByRecord as $table => $fileUidsByRecordUid) {
+            $tableControl = is_array($GLOBALS['TCA'][$table]['ctrl'] ?? null) ? $GLOBALS['TCA'][$table]['ctrl'] : [];
+            $deleteColumn = (string)($tableControl['delete'] ?? '');
+            if ($deleteColumn === '') {
+                continue;
+            }
+            foreach (array_chunk(array_keys($fileUidsByRecordUid), 1000) as $recordUids) {
+                $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
+                $queryBuilder->getRestrictions()->removeAll();
+                $deletedRecordUids = $queryBuilder
+                    ->select('uid')
+                    ->from($table)
+                    ->where(
+                        $queryBuilder->expr()->in('uid', $queryBuilder->createNamedParameter($recordUids, Connection::PARAM_INT_ARRAY)),
+                        $queryBuilder->expr()->eq($deleteColumn, $queryBuilder->createNamedParameter(1, Connection::PARAM_INT))
+                    )
+                    ->executeQuery()
+                    ->fetchFirstColumn();
+                foreach ($deletedRecordUids as $recordUid) {
+                    foreach ($fileUidsByRecordUid[(int)$recordUid] as $fileUid) {
+                        $uids[] = $fileUid;
+                    }
+                }
+            }
+        }
+
+        return $this->restorableReferencedUids = array_values(array_unique($uids));
     }
 
     /**

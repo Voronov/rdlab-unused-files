@@ -54,10 +54,10 @@ final class ReportCommandTest extends FunctionalTestCase
         self::assertSame(Command::SUCCESS, $exitCode);
         $rows = $this->readCsv();
         self::assertSame(['uid', 'storage', 'path', 'folder', 'name', 'extension', 'size_bytes', 'created', 'modified', 'public_url', 'status'], $rows[0]);
-        self::assertSame(['11', '10', '2', '1'], array_column(array_slice($rows, 1), 0));
-        self::assertSame(['1', '1', '/user_upload/unused.pdf', '/user_upload/', 'unused.pdf', 'pdf', '100'], array_slice($rows[4], 0, 7));
-        self::assertStringStartsWith('No references in TYPO3', (string)$rows[4][10]);
-        self::assertStringContainsString('4 unused files', $this->commandTester->getDisplay());
+        self::assertSame(['11', '10', '2', '20', '19', '1'], array_column(array_slice($rows, 1), 0));
+        self::assertSame(['1', '1', '/user_upload/unused.pdf', '/user_upload/', 'unused.pdf', 'pdf', '100'], array_slice($rows[6], 0, 7));
+        self::assertStringStartsWith('No references in TYPO3', (string)$rows[6][10]);
+        self::assertStringContainsString('6 unused files', $this->commandTester->getDisplay());
         self::assertStringNotContainsString('Run "referenceindex:update" first', $this->commandTester->getDisplay());
     }
 
@@ -73,7 +73,7 @@ final class ReportCommandTest extends FunctionalTestCase
         ]);
 
         $rows = $this->readCsv(';');
-        self::assertCount(2, $rows);
+        self::assertCount(4, $rows);
         self::assertSame('2', $rows[1][0]);
     }
 

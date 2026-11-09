@@ -23,7 +23,7 @@ final class DeleteCommandTest extends FunctionalTestCase
         parent::setUp();
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/files.csv');
         GeneralUtility::mkdir_deep($this->instancePath . '/fileadmin/user_upload');
-        foreach (['unused.pdf', 'metadata-only.jpg', 'deleted-ref.png', 'linked.pdf'] as $name) {
+        foreach (['unused.pdf', 'metadata-only.jpg', 'deleted-ref.png', 'linked.pdf', 'unlinked.jpg', 'orphan-ref.jpg'] as $name) {
             file_put_contents($this->instancePath . '/fileadmin/user_upload/' . $name, $name);
         }
         $this->commandTester = new CommandTester($this->get(CommandRegistry::class)->get('rdlab:unusedfiles:delete'));
@@ -45,7 +45,7 @@ final class DeleteCommandTest extends FunctionalTestCase
         $display = $this->commandTester->getDisplay();
         self::assertStringContainsString('/user_upload/unused.pdf', $display);
         self::assertStringNotContainsString('/user_upload/linked.pdf', $display);
-        self::assertStringContainsString('Dry run: 2 files would be deleted', $display);
+        self::assertStringContainsString('Dry run: 4 files would be deleted', $display);
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
     }
 
@@ -76,9 +76,10 @@ final class DeleteCommandTest extends FunctionalTestCase
         $exitCode = $this->commandTester->execute(['--execute' => true, '--folder' => '/user_upload/']);
 
         self::assertSame(Command::SUCCESS, $exitCode);
-        self::assertMatchesRegularExpression('/Deleted\s+2/', $this->commandTester->getDisplay());
+        self::assertMatchesRegularExpression('/Deleted\s+4/', $this->commandTester->getDisplay());
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unused.pdf');
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/metadata-only.jpg');
+        self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unlinked.jpg');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/deleted-ref.png');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/linked.pdf');
     }

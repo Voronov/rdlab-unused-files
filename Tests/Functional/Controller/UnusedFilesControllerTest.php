@@ -193,7 +193,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
         $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['action' => 'deleteSelected', 'selectAll' => '1']);
 
         self::assertSame(303, $response->getStatusCode());
-        // the folder holds two unused files, ordered by identifier the first one is deleted
+        // the folder holds four unused files, ordered by identifier the first one is deleted
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/metadata-only.jpg');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/deleted-ref.png');
@@ -202,7 +202,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
         self::assertCount(2, $messages);
         self::assertSame('1 files removed', $messages[0]->getTitle());
         self::assertSame(
-            '1 more files match the filter. At most 1 files are deleted per run, repeat "Delete all" for the rest.',
+            '3 more files match the filter. At most 1 files are deleted per run, repeat "Delete all" for the rest.',
             $messages[1]->getMessage()
         );
     }

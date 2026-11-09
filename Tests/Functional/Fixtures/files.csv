@@ -22,10 +22,13 @@
 ,16,0,1,"/user_upload/linked-by-url.pdf","h16","f1","linked-by-url.pdf","pdf","application/pdf",25,0,2147483647,2147483647
 ,17,0,1,"/user_upload/External Link.pdf","h17","f1","External Link.pdf","pdf","application/pdf",35,0,2147483647,2147483647
 ,18,0,1,"/user_upload/plain-text.pdf","h18","f1","plain-text.pdf","pdf","application/pdf",45,0,2147483647,2147483647
+,19,0,1,"/user_upload/unlinked.jpg","h19","f1","unlinked.jpg","jpg","image/jpeg",15,0,2147483647,2147483647
+,20,0,1,"/user_upload/orphan-ref.jpg","h20","f1","orphan-ref.jpg","jpg","image/jpeg",16,0,2147483647,2147483647
 "tt_content"
-,"uid","pid","CType","bodytext"
-,1,1,"text","<p><a href=""https://www.example.com/fileadmin/user_upload/linked-by-url.pdf"" target=""_blank"">Download</a></p>"
-,2,1,"text","<p>See fileadmin/user_upload/plain-text.pdf.</p>"
+,"uid","pid","CType","bodytext","deleted"
+,1,1,"text","<p><a href=""https://www.example.com/fileadmin/user_upload/linked-by-url.pdf"" target=""_blank"">Download</a></p>",0
+,2,1,"text","<p>See fileadmin/user_upload/plain-text.pdf.</p>",0
+,3,1,"textmedia","",1
 "pages"
 ,"uid","pid","doktype","title","url"
 ,1,0,3,"External link","https://www.example.com/fileadmin/user_upload/External%20Link.pdf?download=1"
@@ -41,4 +44,6 @@
 "sys_file_reference"
 ,"uid","pid","uid_local","uid_foreign","tablenames","fieldname","deleted"
 ,1,1,4,1,"tt_content","image",0
-,2,1,5,1,"tt_content","image",1
+,2,1,5,3,"tt_content","image",1
+,3,1,19,1,"tt_content","image",1
+,4,1,20,999,"tt_content","image",1

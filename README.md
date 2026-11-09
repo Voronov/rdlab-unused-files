@@ -12,7 +12,7 @@ TYPO3 13 extension that finds FAL files which are not referenced anywhere in TYP
 A file is listed when **all** of the following are true:
 
 1. `sys_refindex` has no entry pointing to the file, apart from the `sys_file_metadata` record every file owns. The reference index covers FAL relations, RTE links (`t3://file?uid=...`), link fields and all other soft references TYPO3 knows about.
-2. `sys_file_reference` has no row for the file, soft-deleted rows included: a content element in the recycler can be restored together with its file relations. Run `cleanup:deletedrecords` (EXT:lowlevel) first if those files should show up.
+2. `sys_file_reference` has no live row for the file, and no soft-deleted row whose record (content element, news, ...) is itself in the recycler: restoring the record restores its file relations. A file an editor removed from a live element shows up right away. Run `cleanup:deletedrecords` (EXT:lowlevel) first if files of records in the recycler should show up too.
 3. The file path does not occur in any text field that can hold a link: RTE texts, link fields, pages of type "Link to external URL", flexforms, TypoScript records (URL-encoded or not, case-insensitive, soft-deleted records included). The reference index does not record URLs, so a file linked by its absolute URL is only found this way. `sys_refindex` string references (`ref_table = _STRING`) ending with the file path count as well.
 
 Files in `_processed_`, `_temp_` and `_recycler_` (configurable), files marked as missing and the configured file names (`index.html`, `.htaccess`) are never listed or deleted.
