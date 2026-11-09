@@ -31,7 +31,7 @@ final class DeleteCommand extends Command
         $this
             ->setHelp(
                 'Deletes FAL files without any reference in TYPO3. Without --execute the command only lists what it would delete. '
-                . 'Files are moved to the storage\'s _recycler_ folder when one exists. Run "referenceindex:update" first.'
+                . 'Files are moved to the storage\'s _recycler_ folder, which is created when missing. Run "referenceindex:update" first.'
             )
             ->addOption('execute', null, InputOption::VALUE_NONE, 'Really delete the files (default is a dry run)')
             ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Stop after this many files (0 = no limit)', 0)

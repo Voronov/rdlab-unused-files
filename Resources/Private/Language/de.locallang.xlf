@@ -140,8 +140,8 @@
                 <target>Datei löschen</target>
             </trans-unit>
             <trans-unit id="delete.single.confirm" resname="delete.single.confirm">
-                <source>Delete the file "%s"? This cannot be undone unless the storage has a _recycler_ folder.</source>
-                <target>Datei „%s“ löschen? Dies lässt sich nur rückgängig machen, wenn der Speicher einen Ordner _recycler_ hat.</target>
+                <source>Delete the file "%s"? It is moved to the _recycler_ folder of its storage.</source>
+                <target>Datei „%s“ löschen? Sie wird in den Ordner _recycler_ ihres Speichers verschoben.</target>
             </trans-unit>
             <trans-unit id="delete.selected" resname="delete.selected">
                 <source>Delete selected</source>

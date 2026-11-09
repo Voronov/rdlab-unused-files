@@ -22,6 +22,7 @@ final class DeleteCommandTest extends FunctionalTestCase
     {
         parent::setUp();
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/files.csv');
+        GeneralUtility::rmdir($this->instancePath . '/fileadmin/_recycler_', true);
         GeneralUtility::mkdir_deep($this->instancePath . '/fileadmin/user_upload');
         foreach (['unused.pdf', 'metadata-only.jpg', 'deleted-ref.png', 'linked.pdf', 'unlinked.jpg', 'orphan-ref.jpg'] as $name) {
             file_put_contents($this->instancePath . '/fileadmin/user_upload/' . $name, $name);
@@ -76,8 +77,9 @@ final class DeleteCommandTest extends FunctionalTestCase
         $exitCode = $this->commandTester->execute(['--execute' => true, '--folder' => '/user_upload/']);
 
         self::assertSame(Command::SUCCESS, $exitCode);
-        self::assertMatchesRegularExpression('/Deleted\s+4/', $this->commandTester->getDisplay());
+        self::assertMatchesRegularExpression('/Moved to recycler\s+4/', $this->commandTester->getDisplay());
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertFileExists($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/metadata-only.jpg');
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unlinked.jpg');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/deleted-ref.png');
@@ -91,7 +93,7 @@ final class DeleteCommandTest extends FunctionalTestCase
 
         $this->commandTester->execute(['--execute' => true, '--folder' => '/user_upload/', '--limit' => '1']);
 
-        self::assertMatchesRegularExpression('/Deleted\s+1/', $this->commandTester->getDisplay());
+        self::assertMatchesRegularExpression('/Moved to recycler\s+1/', $this->commandTester->getDisplay());
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/metadata-only.jpg');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
     }

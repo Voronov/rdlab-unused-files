@@ -21,20 +21,22 @@ final class FileDeleterTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/files.csv');
         // the test instance is shared by all tests of this class, so remove what a previous test left behind
         GeneralUtility::rmdir($this->instancePath . '/fileadmin/user_upload/_recycler_', true);
+        GeneralUtility::rmdir($this->instancePath . '/fileadmin/_recycler_', true);
         GeneralUtility::mkdir_deep($this->instancePath . '/fileadmin/user_upload');
         file_put_contents($this->instancePath . '/fileadmin/user_upload/unused.pdf', 'unused');
         file_put_contents($this->instancePath . '/fileadmin/user_upload/linked.pdf', 'linked');
     }
 
     #[Test]
-    public function unusedFileIsDeleted(): void
+    public function unusedFileIsMovedToRecyclerFolderCreatedInTheStorageRoot(): void
     {
         $result = $this->get(FileDeleter::class)->delete(1);
 
-        self::assertSame(DeleteOutcome::Deleted, $result->outcome);
+        self::assertSame(DeleteOutcome::MovedToRecycler, $result->outcome);
         self::assertSame(1, $result->fileUid);
         self::assertSame('1:/user_upload/unused.pdf', $result->identifier);
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertFileExists($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
     }
 
     #[Test]
@@ -47,6 +49,7 @@ final class FileDeleterTest extends FunctionalTestCase
         self::assertSame(DeleteOutcome::MovedToRecycler, $result->outcome);
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unused.pdf');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/_recycler_/unused.pdf');
+        self::assertDirectoryDoesNotExist($this->instancePath . '/fileadmin/_recycler_');
         // the moved file is indexed again at its new place, FAL removed the old entry
         $identifiers = $this->get(ConnectionPool::class)->getConnectionForTable('sys_file')
             ->select(['identifier'], 'sys_file', ['storage' => 1, 'name' => 'unused.pdf'])
@@ -94,8 +97,9 @@ final class FileDeleterTest extends FunctionalTestCase
 
         self::assertSame(DeleteOutcome::Failed, $result->outcome);
         self::assertSame('1:/user_upload/unused.pdf', $result->identifier);
-        self::assertSame('You are not allowed to delete the file "/user_upload/unused.pdf"', $result->message);
+        self::assertSame('Could not create the _recycler_ folder: You are not allowed to create directories in the folder "/"', $result->message);
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertDirectoryDoesNotExist($this->instancePath . '/fileadmin/_recycler_');
     }
 
     #[Test]
@@ -126,6 +130,6 @@ final class FileDeleterTest extends FunctionalTestCase
         $details = $this->get(ConnectionPool::class)->getConnectionForTable('sys_log')
             ->select(['details'], 'sys_log', ['userid' => 1])
             ->fetchFirstColumn();
-        self::assertContains('Unused file "%s" deleted (EXT:rdlab_unused_files)', $details);
+        self::assertContains('Unused file "%s" moved to recycler (EXT:rdlab_unused_files)', $details);
     }
 }

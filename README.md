@@ -17,7 +17,7 @@ A file is listed when **all** of the following are true:
 
 Files in `_processed_`, `_temp_` and `_recycler_` (configurable), files marked as missing and the configured file names (`index.html`, `.htaccess`) are never listed or deleted.
 
-**What TYPO3 cannot know:** files that are only used by hard-coded paths in templates, TypoScript or CSS, by folder based usage (file collections of type "folder", TypoScript `FILES` with `folders`, plugins that read a folder directly), by newsletters, by direct URLs on other websites or by search engines. Add such folders to `excludedFolders`, review the list folder by folder before deleting and keep a `_recycler_` folder (see below).
+**What TYPO3 cannot know:** files that are only used by hard-coded paths in templates, TypoScript or CSS, by folder based usage (file collections of type "folder", TypoScript `FILES` with `folders`, plugins that read a folder directly), by newsletters, by direct URLs on other websites or by search engines. Add such folders to `excludedFolders` and review the list folder by folder before deleting; deleted files wait in the `_recycler_` folder (see below).
 
 ## Installation
 
@@ -38,7 +38,7 @@ Afterwards flush caches and open `File > Unused files`. The module is available 
    vendor/bin/typo3 referenceindex:update
    ```
    The module and both commands warn when the index is older than the configured maximum age (default 24 hours), and the delete command refuses to run with `--execute` in that case. A scheduler task for `referenceindex:update` is recommended.
-3. **Create a `_recycler_` folder** in the storage root (`fileadmin/_recycler_`). FAL then moves deleted files there instead of removing them, so a deletion can be undone until the recycler is emptied. TYPO3 never empties it by itself; `rdlab:unusedfiles:purgerecycler --execute` (see CLI, works as a scheduler task) deletes files that have been in a `_recycler_` folder for at least `--min-age-days` days, default 30. The command indexes the recycler folders on every run: a file this extension moved there counts from the move, a file deleted in the file list counts from the first run that saw it, so run it daily.
+3. **Plan the recycler cleanup.** Deleted files are never removed right away: FAL moves them to the nearest `_recycler_` folder, and the extension creates `_recycler_` in the storage root (`fileadmin/_recycler_`) on the first deletion when the storage has none. If the folder cannot be created (read-only storage), the file is not deleted and the module reports it. A deletion can be undone by moving the file back in the file list until the recycler is emptied. TYPO3 never empties it by itself; `rdlab:unusedfiles:purgerecycler --execute` (see CLI, works as a scheduler task) deletes files that have been in a `_recycler_` folder for at least `--min-age-days` days, default 30. The command indexes the recycler folders on every run: a file this extension moved there counts from the move, a file deleted in the file list counts from the first run that saw it, so run it daily.
 
 ## Backend module
 

@@ -106,7 +106,7 @@
                 <source>Delete file</source>
             </trans-unit>
             <trans-unit id="delete.single.confirm" resname="delete.single.confirm">
-                <source>Delete the file "%s"? This cannot be undone unless the storage has a _recycler_ folder.</source>
+                <source>Delete the file "%s"? It is moved to the _recycler_ folder of its storage.</source>
             </trans-unit>
             <trans-unit id="delete.selected" resname="delete.selected">
                 <source>Delete selected</source>

@@ -38,6 +38,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
 
         // the test instance is shared by all tests of this class, so start from a clean folder
         GeneralUtility::rmdir($this->instancePath . '/fileadmin/user_upload', true);
+        GeneralUtility::rmdir($this->instancePath . '/fileadmin/_recycler_', true);
         GeneralUtility::mkdir_deep($this->instancePath . '/fileadmin/user_upload');
         foreach (['unused.pdf', 'metadata-only.jpg', 'deleted-ref.png', 'linked.pdf'] as $name) {
             file_put_contents($this->instancePath . '/fileadmin/user_upload/' . $name, $name);
@@ -166,7 +167,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
         self::assertCount(1, $messages);
         self::assertSame(ContextualFeedbackSeverity::OK, $messages[0]->getSeverity());
         self::assertSame('1 files removed', $messages[0]->getTitle());
-        self::assertSame('1 deleted, 0 moved to the recycler folder.', $messages[0]->getMessage());
+        self::assertSame('0 deleted, 1 moved to the recycler folder.', $messages[0]->getMessage());
     }
 
     #[Test]
