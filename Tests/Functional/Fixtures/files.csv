@@ -24,11 +24,16 @@
 ,18,0,1,"/user_upload/plain-text.pdf","h18","f1","plain-text.pdf","pdf","application/pdf",45,0,2147483647,2147483647
 ,19,0,1,"/user_upload/unlinked.jpg","h19","f1","unlinked.jpg","jpg","image/jpeg",15,0,2147483647,2147483647
 ,20,0,1,"/user_upload/orphan-ref.jpg","h20","f1","orphan-ref.jpg","jpg","image/jpeg",16,0,2147483647,2147483647
+,21,0,1,"/user_upload/Annual Report.pdf","h21","f1","Annual Report.pdf","pdf","application/pdf",55,0,2147483647,2147483647
+,22,0,1,"/user_upload/R&D.pdf","h22","f1","R&D.pdf","pdf","application/pdf",65,0,2147483647,2147483647
+,23,0,1,"/user_upload/_recycler_/trashed.pdf","h23","f6","trashed.pdf","pdf","application/pdf",75,0,2147483647,2147483647
 "tt_content"
 ,"uid","pid","CType","bodytext","deleted"
 ,1,1,"text","<p><a href=""https://www.example.com/fileadmin/user_upload/linked-by-url.pdf"" target=""_blank"">Download</a></p>",0
 ,2,1,"text","<p>See fileadmin/user_upload/plain-text.pdf.</p>",0
 ,3,1,"textmedia","",1
+,4,1,"text","<p><a href=""/fileadmin/user_upload/Annual Report.pdf"">Report</a></p>",0
+,5,1,"text","<p><a href=""/fileadmin/user_upload/R&amp;D.pdf"">R&amp;D</a></p>",0
 "pages"
 ,"uid","pid","doktype","title","url"
 ,1,0,3,"External link","https://www.example.com/fileadmin/user_upload/External%20Link.pdf?download=1"

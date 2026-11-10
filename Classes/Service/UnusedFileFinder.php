@@ -73,13 +73,16 @@ final class UnusedFileFinder
     /**
      * @return \Generator<int, array<string, mixed>>
      */
-    public function findAll(UnusedFileFilter $filter, int $limit = 0): \Generator
+    public function findAll(UnusedFileFilter $filter, int $limit = 0, int $offset = 0): \Generator
     {
         $queryBuilder = $this->createBaseQuery($filter);
         $this->selectFileColumns($queryBuilder);
         $queryBuilder->orderBy('f.identifier', 'ASC');
         if ($limit > 0) {
             $queryBuilder->setMaxResults($limit);
+        }
+        if ($offset > 0) {
+            $queryBuilder->setFirstResult($offset);
         }
 
         $result = $queryBuilder->executeQuery();
@@ -161,6 +164,11 @@ final class UnusedFileFinder
                 $queryBuilder->expr()->eq('f.missing', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
                 $queryBuilder->expr()->notIn('f.uid', $this->referenceIndexSubQuery($queryBuilder)),
                 $queryBuilder->expr()->notIn('f.uid', $this->fileReferenceSubQuery($queryBuilder)),
+                // FAL deletes a file in a recycler folder for good, whatever the folder's depth
+                $queryBuilder->expr()->notLike(
+                    'f.identifier',
+                    $queryBuilder->createNamedParameter('%' . $queryBuilder->escapeLikeWildcards('/' . RecyclerFinder::FOLDER_NAME . '/') . '%')
+                ),
             );
 
         foreach ($this->settings->getExcludedFolders() as $folder) {

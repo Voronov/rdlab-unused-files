@@ -37,7 +37,7 @@ Afterwards flush caches and open `File > Unused files`. The module is available 
    ```bash
    vendor/bin/typo3 referenceindex:update
    ```
-   The module and both commands warn when the index is older than the configured maximum age (default 24 hours), and the delete command refuses to run with `--execute` in that case. A scheduler task for `referenceindex:update` is recommended.
+   The module and both commands warn when the index is older than the configured maximum age (default 24 hours), and in that case the module refuses to delete and the delete command refuses to run with `--execute`. A scheduler task for `referenceindex:update` is recommended.
 3. **Plan the recycler cleanup.** Deleted files are never removed right away: FAL moves them to the nearest `_recycler_` folder, and the extension creates `_recycler_` in the storage root (`fileadmin/_recycler_`) on the first deletion when the storage has none. If the folder cannot be created (read-only storage), the file is not deleted and the module reports it. A deletion can be undone by moving the file back in the file list until the recycler is emptied. TYPO3 never empties it by itself; `rdlab:unusedfiles:purgerecycler --execute` (see CLI, works as a scheduler task) deletes files that have been in a `_recycler_` folder for at least `--min-age-days` days, default 30. The command indexes the recycler folders on every run: a file this extension moved there counts from the move, a file deleted in the file list counts from the first run that saw it, so run it daily.
 
 ## Backend module
@@ -47,7 +47,7 @@ Afterwards flush caches and open `File > Unused files`. The module is available 
 - "Download CSV" in the doc header exports the current filter.
 - Selection works like in a mail client: the header checkbox selects the page, a banner then offers to select all files matching the filter. Deleting the whole selection processes at most `bulkDeleteLimit` files per request (default 200) and tells you how many are left.
 - Every file is checked again for references immediately before it is deleted, so a file that was referenced after the list was rendered is skipped.
-- "Delete all" is refused while the reference index is older than `referenceIndexMaxAgeHours`.
+- Deleting is refused while the reference index is older than `referenceIndexMaxAgeHours`.
 - Deletions are logged to the TYPO3 system log (`Log` module).
 
 ## CLI
@@ -79,7 +79,7 @@ Extension configuration (`Admin Tools > Settings > Extension Configuration > rdl
 | `excludedFolders` | `/_processed_/,/_temp_/,/_recycler_/` | Folder identifiers (relative to the storage root) that are never listed or deleted. Add folders that are referenced by path from templates, e.g. `/templates/`. |
 | `excludedFileNames` | `index.html,.htaccess` | Exact file names that are never listed or deleted. |
 | `bulkDeleteLimit` | `200` | Files deleted per "Delete all" request. |
-| `referenceIndexMaxAgeHours` | `24` | Age of the reference index after which a warning is shown. |
+| `referenceIndexMaxAgeHours` | `24` | Age of the reference index after which a warning is shown and deleting is refused. |
 
 The same values can be set in `config/system/settings.php` or a YAML configuration under `EXTENSIONS/rdlab_unused_files`.
 

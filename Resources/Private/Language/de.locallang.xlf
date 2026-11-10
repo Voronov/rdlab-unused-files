@@ -236,8 +236,8 @@
                 <target>%d weitere Dateien entsprechen dem Filter. Pro Durchlauf werden höchstens %d Dateien gelöscht, wiederholen Sie „Alle löschen“ für den Rest.</target>
             </trans-unit>
             <trans-unit id="message.staleIndex" resname="message.staleIndex">
-                <source>The reference index is older than %d hours. Run "typo3 referenceindex:update" before deleting all matching files.</source>
-                <target>Der Referenzindex ist älter als %d Stunden. Führen Sie „typo3 referenceindex:update“ aus, bevor Sie alle passenden Dateien löschen.</target>
+                <source>The reference index is older than %d hours. Run "typo3 referenceindex:update" before deleting files.</source>
+                <target>Der Referenzindex ist älter als %d Stunden. Führen Sie „typo3 referenceindex:update“ aus, bevor Sie Dateien löschen.</target>
             </trans-unit>
         </body>
     </file>

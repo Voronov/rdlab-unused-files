@@ -30,6 +30,17 @@ final class CsvExporterTest extends UnitTestCase
     }
 
     #[Test]
+    public function escapeFormulaPrefixesValuesASpreadsheetWouldRun(): void
+    {
+        self::assertSame("'=1+1.pdf", CsvExporter::escapeFormula('=1+1.pdf'));
+        self::assertSame("'+draft.pdf", CsvExporter::escapeFormula('+draft.pdf'));
+        self::assertSame("'-draft.pdf", CsvExporter::escapeFormula('-draft.pdf'));
+        self::assertSame("'@cmd.pdf", CsvExporter::escapeFormula('@cmd.pdf'));
+        self::assertSame('report=2024.pdf', CsvExporter::escapeFormula('report=2024.pdf'));
+        self::assertSame('', CsvExporter::escapeFormula(''));
+    }
+
+    #[Test]
     public function formatTimestampReturnsEmptyStringForUnsetDate(): void
     {
         self::assertSame('', CsvExporter::formatTimestamp(0));

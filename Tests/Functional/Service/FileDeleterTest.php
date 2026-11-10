@@ -6,6 +6,8 @@ namespace RDLAB\UnusedFiles\Tests\Functional\Service;
 
 use PHPUnit\Framework\Attributes\Test;
 use RDLAB\UnusedFiles\Domain\DeleteOutcome;
+use RDLAB\UnusedFiles\Domain\DeleteResult;
+use RDLAB\UnusedFiles\Domain\UnusedFileFilter;
 use RDLAB\UnusedFiles\Service\FileDeleter;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -55,6 +57,45 @@ final class FileDeleterTest extends FunctionalTestCase
             ->select(['identifier'], 'sys_file', ['storage' => 1, 'name' => 'unused.pdf'])
             ->fetchFirstColumn();
         self::assertSame(['/user_upload/_recycler_/unused.pdf'], $identifiers);
+    }
+
+    #[Test]
+    public function fileMovedToNestedRecyclerFolderIsNotDeletedAgain(): void
+    {
+        GeneralUtility::mkdir_deep($this->instancePath . '/fileadmin/user_upload/_recycler_');
+        $this->get(FileDeleter::class)->delete(1);
+        $movedUid = (int)$this->get(ConnectionPool::class)->getConnectionForTable('sys_file')
+            ->select(['uid'], 'sys_file', ['identifier' => '/user_upload/_recycler_/unused.pdf'])
+            ->fetchOne();
+
+        $result = $this->get(FileDeleter::class)->delete($movedUid);
+
+        self::assertSame(DeleteOutcome::SkippedReferenced, $result->outcome);
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/_recycler_/unused.pdf');
+    }
+
+    #[Test]
+    public function deleteMatchingPassesOverFilesThatCannotBeDeleted(): void
+    {
+        // the first matches by path: /docs/second.pdf in the read-only storage 2, /other/Old_Report.pdf without its folder on disk
+        $this->get(ConnectionPool::class)->getConnectionForTable('sys_file_storage')
+            ->update('sys_file_storage', ['is_writable' => 0], ['uid' => 2]);
+
+        $results = $this->get(FileDeleter::class)->deleteMatching(new UnusedFileFilter(), 2);
+
+        self::assertSame(
+            [[11, DeleteOutcome::Failed], [10, DeleteOutcome::Failed], [2, DeleteOutcome::Deleted], [20, DeleteOutcome::Deleted]],
+            array_map(static fn(DeleteResult $result): array => [$result->fileUid, $result->outcome], $results)
+        );
+    }
+
+    #[Test]
+    public function deleteMatchingWithoutLimitDeletesAllMatches(): void
+    {
+        $results = $this->get(FileDeleter::class)->deleteMatching(new UnusedFileFilter(folder: '/user_upload/'));
+
+        self::assertSame([2, 20, 19, 1], array_map(static fn(DeleteResult $result): int => $result->fileUid, $results));
+        self::assertFileExists($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
     }
 
     #[Test]

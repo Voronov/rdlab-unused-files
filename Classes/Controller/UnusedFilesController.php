@@ -119,13 +119,10 @@ final class UnusedFilesController
     private function handleDelete(ServerRequestInterface $request, string $action, UnusedFileFilter $filter, string $folderId): ResponseInterface
     {
         $body = (array)$request->getParsedBody();
-        $uids = [];
-        $remaining = 0;
-
         $selectAll = (string)($body['selectAll'] ?? '0') === '1';
         $bulk = $action === 'deleteAll' || ($action === 'deleteSelected' && $selectAll);
         $view = $this->moduleTemplateFactory->create($request);
-        if ($bulk && $this->referenceIndexStatus->isStale()) {
+        if ($this->referenceIndexStatus->isStale()) {
             $view->addFlashMessage(
                 $this->translate('message.staleIndex', [$this->settings->getReferenceIndexMaxAgeHours()]),
                 '',
@@ -133,28 +130,24 @@ final class UnusedFilesController
             );
             return $this->redirectToList($filter, $folderId);
         }
-        if ($action === 'deleteSingle') {
-            $uids = [(int)($body['deleteSingle'] ?? 0)];
-        } elseif (!$bulk) {
-            $uids = array_map('intval', (array)($body['files'] ?? []));
-        } else {
+        if ($bulk) {
             // "Delete all matching files": in batches of bulkDeleteLimit
-            foreach ($this->finder->findAll($filter, $this->settings->getBulkDeleteLimit()) as $row) {
-                $uids[] = (int)$row['uid'];
-            }
-            $remaining = max(0, $this->finder->countMatching($filter)['count'] - count($uids));
+            $results = $this->fileDeleter->deleteMatching($filter, $this->settings->getBulkDeleteLimit());
+        } else {
+            $uids = $action === 'deleteSingle' ? [(int)($body['deleteSingle'] ?? 0)] : array_map('intval', (array)($body['files'] ?? []));
+            $uids = array_values(array_unique(array_filter($uids, static fn(int $uid): bool => $uid > 0)));
+            $results = array_map($this->fileDeleter->delete(...), $uids);
         }
-        $uids = array_values(array_unique(array_filter($uids, static fn(int $uid): bool => $uid > 0)));
 
-        if ($uids === []) {
+        if ($results === []) {
             $view->addFlashMessage($this->translate('message.nothingSelected'), '', ContextualFeedbackSeverity::WARNING);
             return $this->redirectToList($filter, $folderId);
         }
+        $remaining = $bulk ? $this->finder->countMatching($filter)['count'] : 0;
 
         $counts = array_fill_keys(array_map(static fn(DeleteOutcome $outcome): string => $outcome->value, DeleteOutcome::cases()), 0);
         $failures = [];
-        foreach ($uids as $uid) {
-            $result = $this->fileDeleter->delete($uid);
+        foreach ($results as $result) {
             $counts[$result->outcome->value]++;
             if ($result->outcome === DeleteOutcome::Failed) {
                 $failures[] = $result->identifier . ': ' . $result->message;

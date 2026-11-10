@@ -25,7 +25,9 @@ final class ContentPathScanner
     /**
      * Strings starting with the public path of a storage as found in the
      * content, e.g. "fileadmin/user_upload/report.pdf", without query string
-     * or fragment. Soft deleted records are included, like file references.
+     * or fragment. Each occurrence is also returned up to the next quote or
+     * tag, so a file name with a space or "&" in a link is found as well.
+     * Soft deleted records are included, like file references.
      *
      * @return list<string>
      */
@@ -35,7 +37,11 @@ final class ContentPathScanner
         if ($basePaths === []) {
             return [];
         }
-        $pattern = '~(?:' . implode('|', array_map(static fn(string $basePath): string => preg_quote($basePath, '~'), $basePaths)) . ')[^\s"\'<>?#&\\\\]*~iu';
+        $basePathPattern = '(?:' . implode('|', array_map(static fn(string $basePath): string => preg_quote($basePath, '~'), $basePaths)) . ')';
+        $patterns = [
+            '~' . $basePathPattern . '[^\s"\'<>?#&\\\\]*~iu',
+            '~' . $basePathPattern . '[^\r\n"\'<>?#\\\\]*~iu',
+        ];
 
         $tca = is_array($GLOBALS['TCA'] ?? null) ? $GLOBALS['TCA'] : [];
         $paths = [];
@@ -63,9 +69,15 @@ final class ContentPathScanner
                 ->executeQuery();
             while (($row = $result->fetchAssociative()) !== false) {
                 foreach ($row as $value) {
-                    if (is_string($value) && preg_match_all($pattern, $value, $matches) > 0) {
-                        foreach ($matches[0] as $match) {
-                            $paths[] = rtrim($match, '.,;:!)');
+                    if (!is_string($value)) {
+                        continue;
+                    }
+                    $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5);
+                    foreach ($patterns as $pattern) {
+                        if (preg_match_all($pattern, $value, $matches) > 0) {
+                            foreach ($matches[0] as $match) {
+                                $paths[] = rtrim($match, '.,;:!)');
+                            }
                         }
                     }
                 }

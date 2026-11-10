@@ -159,6 +159,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     #[Test]
     public function deleteSingleRemovesFileAndRedirects(): void
     {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
         $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1', 'filter' => ['page' => '2']]);
 
         self::assertEquals(['id' => '1:/user_upload/', 'filter' => ['page' => '2']], $this->redirectArguments($response));
@@ -173,6 +174,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     #[Test]
     public function deleteSelectedSkipsReferencedAndUnknownFiles(): void
     {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
         $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['action' => 'deleteSelected', 'files' => ['1', '3', '999']]);
 
         self::assertSame(303, $response->getStatusCode());
@@ -220,23 +222,35 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
         self::assertCount(1, $messages);
         self::assertSame(ContextualFeedbackSeverity::ERROR, $messages[0]->getSeverity());
         self::assertSame(
-            'The reference index is older than 24 hours. Run "typo3 referenceindex:update" before deleting all matching files.',
+            'The reference index is older than 24 hours. Run "typo3 referenceindex:update" before deleting files.',
             $messages[0]->getMessage()
         );
     }
 
     #[Test]
-    public function deleteSingleWorksWithStaleReferenceIndex(): void
+    public function deleteSingleIsRefusedWithStaleReferenceIndex(): void
     {
         $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
 
         self::assertSame(303, $response->getStatusCode());
-        self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertSame(ContextualFeedbackSeverity::ERROR, $this->flashMessages()[0]->getSeverity());
+    }
+
+    #[Test]
+    public function deleteSelectedIsRefusedWithStaleReferenceIndex(): void
+    {
+        $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['action' => 'deleteSelected', 'files' => ['1']]);
+
+        self::assertSame(303, $response->getStatusCode());
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertSame(ContextualFeedbackSeverity::ERROR, $this->flashMessages()[0]->getSeverity());
     }
 
     #[Test]
     public function deleteSelectedWithoutFilesShowsWarning(): void
     {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
         $response = $this->dispatch('POST', [], ['action' => 'deleteSelected']);
 
         self::assertSame(303, $response->getStatusCode());

@@ -48,12 +48,12 @@ final class CsvExporter
                 (int)$row['storage'],
                 (string)$row['identifier'],
                 self::folderOf((string)$row['identifier']),
-                (string)$row['name'],
-                (string)$row['extension'],
+                self::escapeFormula((string)$row['name']),
+                self::escapeFormula((string)$row['extension']),
                 (int)$row['size'],
                 self::formatTimestamp((int)$row['creation_date']),
                 self::formatTimestamp((int)$row['modification_date']),
-                $this->publicUrl($row),
+                self::escapeFormula($this->publicUrl($row)),
                 $status,
             ], $delimiter, '"', '\\');
             $count++;
@@ -67,6 +67,14 @@ final class CsvExporter
     {
         $folder = dirname($identifier);
         return $folder === '.' || $folder === '' ? '/' : rtrim($folder, '/') . '/';
+    }
+
+    /**
+     * Keeps a spreadsheet from running a value that starts like a formula.
+     */
+    public static function escapeFormula(string $value): string
+    {
+        return $value !== '' && str_contains("=+-@\t\r", $value[0]) ? "'" . $value : $value;
     }
 
     public static function formatTimestamp(int $timestamp): string

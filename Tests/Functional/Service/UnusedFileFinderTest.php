@@ -145,6 +145,7 @@ final class UnusedFileFinderTest extends FunctionalTestCase
         self::assertFalse($finder->isUnreferenced(12), 'referenced by path');
         self::assertFalse($finder->isUnreferenced(13), 'referenced by URL');
         self::assertFalse($finder->isUnreferenced(6), 'excluded folder');
+        self::assertFalse($finder->isUnreferenced(23), 'recycler folder below the storage root');
         self::assertFalse($finder->isUnreferenced(7), 'excluded file name');
         self::assertFalse($finder->isUnreferenced(8), 'missing file');
         self::assertFalse($finder->isUnreferenced(9), 'storage 0');
@@ -169,6 +170,8 @@ final class UnusedFileFinderTest extends FunctionalTestCase
         self::assertFalse($finder->isUnreferenced(16), 'URL in an RTE link');
         self::assertFalse($finder->isUnreferenced(17), 'URL-encoded path with query string in pages.url');
         self::assertFalse($finder->isUnreferenced(18), 'plain path followed by punctuation');
+        self::assertFalse($finder->isUnreferenced(21), 'file name with a space that is not URL-encoded');
+        self::assertFalse($finder->isUnreferenced(22), 'file name with an ampersand written as HTML entity');
     }
 
     #[Test]

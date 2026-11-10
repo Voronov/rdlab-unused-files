@@ -89,14 +89,12 @@ final class DeleteCommand extends Command
 
         $counts = array_fill_keys(array_map(static fn(DeleteOutcome $outcome): string => $outcome->value, DeleteOutcome::cases()), 0);
         $failures = [];
-        $progress = $io->createProgressBar(count($candidates));
-        foreach ($candidates as $row) {
-            $result = $this->fileDeleter->delete((int)$row['uid']);
+        $progress = $io->createProgressBar();
+        foreach ($this->fileDeleter->deleteMatching($filter, $limit, static fn() => $progress->advance()) as $result) {
             $counts[$result->outcome->value]++;
             if ($result->outcome === DeleteOutcome::Failed) {
                 $failures[] = $result->identifier . ': ' . $result->message;
             }
-            $progress->advance();
         }
         $progress->finish();
         $io->newLine(2);
