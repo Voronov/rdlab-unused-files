@@ -11,6 +11,8 @@ use RDLAB\UnusedFiles\Domain\UnusedFileFilter;
 use RDLAB\UnusedFiles\Service\CsvExporter;
 use RDLAB\UnusedFiles\Service\ExtensionSettings;
 use RDLAB\UnusedFiles\Service\FileDeleter;
+use RDLAB\UnusedFiles\Service\FileRestorer;
+use RDLAB\UnusedFiles\Service\RecycledFileRepository;
 use RDLAB\UnusedFiles\Service\ReferenceIndexStatus;
 use RDLAB\UnusedFiles\Service\UnusedFileFinder;
 use TYPO3\CMS\Backend\Attribute\AsController;
@@ -25,6 +27,7 @@ use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 
 /**
@@ -38,6 +41,7 @@ final class UnusedFilesController
 {
     private const ROUTE = 'file_rdlab_unused_files';
     private const LLL = 'LLL:EXT:rdlab_unused_files/Resources/Private/Language/locallang.xlf:';
+    private const RECYCLED_PER_PAGE = 50;
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
@@ -50,6 +54,9 @@ final class UnusedFilesController
         private readonly CsvExporter $csvExporter,
         private readonly ReferenceIndexStatus $referenceIndexStatus,
         private readonly ExtensionSettings $settings,
+        private readonly RecycledFileRepository $recycledFiles,
+        private readonly FileRestorer $fileRestorer,
+        private readonly StorageRepository $storageRepository,
     ) {}
 
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
@@ -65,12 +72,16 @@ final class UnusedFilesController
             return match ($action) {
                 'filter' => $this->redirectToList($filter->withPage(1), $folderId),
                 'deleteSingle', 'deleteSelected', 'deleteAll' => $this->handleDelete($request, $action, $filter, $folderId),
+                'restore' => $this->handleRestore($request, $folderId),
                 default => $this->redirectToList($filter, $folderId),
             };
         }
 
         if (($params['action'] ?? '') === 'csv') {
             return $this->csvResponse($filter);
+        }
+        if (($params['action'] ?? '') === 'recycled') {
+            return $this->renderRecycled($request, max(1, (int)($params['page'] ?? 1)), $folderId);
         }
 
         return $this->renderList($request, $filter, $folderId);
@@ -187,6 +198,76 @@ final class UnusedFilesController
         return $this->redirectToList($filter, $folderId);
     }
 
+    /**
+     * Files the extension moved to a recycler folder, with a button to put
+     * each one back. Entries whose file is gone from the recycler are dropped.
+     */
+    private function renderRecycled(ServerRequestInterface $request, int $page, string $folderId): ResponseInterface
+    {
+        $view = $this->moduleTemplateFactory->create($request);
+        $view->setTitle($this->translate('recycled.title'));
+
+        $files = [];
+        foreach ($this->recycledFiles->findPage($page, self::RECYCLED_PER_PAGE) as $row) {
+            $storage = $this->storageRepository->findByUid((int)$row['storage']);
+            if ($storage === null || !$storage->hasFile((string)$row['recycler_identifier'])) {
+                $this->recycledFiles->remove((int)$row['uid']);
+                continue;
+            }
+            $files[] = [
+                'uid' => (int)$row['uid'],
+                'name' => (string)$row['name'],
+                'originalIdentifier' => (string)$row['original_identifier'],
+                'originalFolder' => (int)$row['storage'] . ':' . CsvExporter::folderOf((string)$row['original_identifier']),
+                'size' => (int)$row['size'],
+                'deletedAt' => (int)$row['deleted_at'],
+                'deletedBy' => (string)$row['deleted_by'],
+            ];
+        }
+        $pageCount = max(1, (int)ceil($this->recycledFiles->countAll() / self::RECYCLED_PER_PAGE));
+
+        $buttonBar = $view->getDocHeaderComponent()->getButtonBar();
+        $backButton = $buttonBar->makeLinkButton()
+            ->setHref($this->listUri(new UnusedFileFilter(), $folderId))
+            ->setTitle($this->translate('module.title'))
+            ->setShowLabelText(true)
+            ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL));
+        $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
+
+        $view->assignMultiple([
+            'files' => $files,
+            'folderId' => $folderId,
+            'page' => $page,
+            'pageCount' => $pageCount,
+            'formUri' => $this->listUri(new UnusedFileFilter(), $folderId),
+            'previousUri' => $page > 1 ? $this->listUri(new UnusedFileFilter(), $folderId, ['action' => 'recycled', 'page' => $page - 1]) : '',
+            'nextUri' => $page < $pageCount ? $this->listUri(new UnusedFileFilter(), $folderId, ['action' => 'recycled', 'page' => $page + 1]) : '',
+        ]);
+
+        return $view->renderResponse('UnusedFiles/Recycled');
+    }
+
+    private function handleRestore(ServerRequestInterface $request, string $folderId): ResponseInterface
+    {
+        $body = (array)$request->getParsedBody();
+        $view = $this->moduleTemplateFactory->create($request);
+        $result = $this->fileRestorer->restore((int)($body['restore'] ?? 0));
+        if ($result->restored) {
+            $view->addFlashMessage($this->translate('message.restored', [$result->identifier]), '', ContextualFeedbackSeverity::OK);
+        } else {
+            $view->addFlashMessage(
+                trim($result->identifier . ': ' . $result->message, ': '),
+                $this->translate('message.restoreFailed.title'),
+                ContextualFeedbackSeverity::ERROR
+            );
+        }
+
+        return new RedirectResponse(
+            $this->listUri(new UnusedFileFilter(), $folderId, ['action' => 'recycled', 'page' => max(1, (int)($body['page'] ?? 1))]),
+            303
+        );
+    }
+
     private function csvResponse(UnusedFileFilter $filter): ResponseInterface
     {
         $handle = fopen('php://temp', 'wb+');
@@ -295,6 +376,13 @@ final class UnusedFilesController
             ->setShowLabelText(true)
             ->setIcon($this->iconFactory->getIcon('actions-download', IconSize::SMALL));
         $buttonBar->addButton($csvButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
+
+        $recycledButton = $buttonBar->makeLinkButton()
+            ->setHref($this->listUri(new UnusedFileFilter(), $folderId, ['action' => 'recycled']))
+            ->setTitle($this->translate('button.recycled', [$this->recycledFiles->countAll()]))
+            ->setShowLabelText(true)
+            ->setIcon($this->iconFactory->getIcon('actions-history', IconSize::SMALL));
+        $buttonBar->addButton($recycledButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
 
         $reloadButton = $buttonBar->makeLinkButton()
             ->setHref($this->listUri($filter, $folderId))

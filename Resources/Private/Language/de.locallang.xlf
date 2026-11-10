@@ -239,6 +239,46 @@
                 <source>The reference index is older than %d hours. Run "typo3 referenceindex:update" before deleting files.</source>
                 <target>Der Referenzindex ist älter als %d Stunden. Führen Sie „typo3 referenceindex:update“ aus, bevor Sie Dateien löschen.</target>
             </trans-unit>
+            <trans-unit id="recycled.title" resname="recycled.title">
+                <source>Deleted files</source>
+                <target>Gelöschte Dateien</target>
+            </trans-unit>
+            <trans-unit id="recycled.intro" resname="recycled.intro">
+                <source>Files this module or its delete command moved to a recycler folder. "Restore" moves a file back to the folder it came from. A file disappears from this list once it is restored or removed from the recycler folder for good.</source>
+                <target>Dateien, die dieses Modul oder sein Löschbefehl in einen Papierkorb-Ordner verschoben hat. „Wiederherstellen“ verschiebt eine Datei zurück in ihren ursprünglichen Ordner. Eine Datei verschwindet aus dieser Liste, sobald sie wiederhergestellt oder endgültig aus dem Papierkorb-Ordner entfernt wurde.</target>
+            </trans-unit>
+            <trans-unit id="recycled.empty" resname="recycled.empty">
+                <source>No deleted files to restore.</source>
+                <target>Keine gelöschten Dateien zum Wiederherstellen.</target>
+            </trans-unit>
+            <trans-unit id="recycled.originalFolder" resname="recycled.originalFolder">
+                <source>Original folder</source>
+                <target>Ursprünglicher Ordner</target>
+            </trans-unit>
+            <trans-unit id="recycled.deletedAt" resname="recycled.deletedAt">
+                <source>Deleted</source>
+                <target>Gelöscht</target>
+            </trans-unit>
+            <trans-unit id="recycled.deletedBy" resname="recycled.deletedBy">
+                <source>Deleted by</source>
+                <target>Gelöscht von</target>
+            </trans-unit>
+            <trans-unit id="recycled.restore" resname="recycled.restore">
+                <source>Restore</source>
+                <target>Wiederherstellen</target>
+            </trans-unit>
+            <trans-unit id="button.recycled" resname="button.recycled">
+                <source>Deleted files (%d)</source>
+                <target>Gelöschte Dateien (%d)</target>
+            </trans-unit>
+            <trans-unit id="message.restored" resname="message.restored">
+                <source>%s was restored.</source>
+                <target>%s wurde wiederhergestellt.</target>
+            </trans-unit>
+            <trans-unit id="message.restoreFailed.title" resname="message.restoreFailed.title">
+                <source>The file could not be restored</source>
+                <target>Die Datei konnte nicht wiederhergestellt werden</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

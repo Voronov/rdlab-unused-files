@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Console\CommandRegistry;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -96,6 +97,24 @@ final class DeleteCommandTest extends FunctionalTestCase
         self::assertMatchesRegularExpression('/Moved to recycler\s+1/', $this->commandTester->getDisplay());
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/metadata-only.jpg');
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+    }
+
+    #[Test]
+    public function executeFailsAndListsFilesThatCouldNotBeDeleted(): void
+    {
+        $this->markReferenceIndexAsFresh();
+        $this->get(ConnectionPool::class)->getConnectionForTable('sys_file_storage')
+            ->update('sys_file_storage', ['is_writable' => 0], ['uid' => 2]);
+
+        GeneralUtility::mkdir_deep($this->instancePath . '/fileadmin/docs');
+        file_put_contents($this->instancePath . '/fileadmin/docs/second.pdf', 'second');
+
+        $exitCode = $this->commandTester->execute(['--execute' => true, '--storage' => '2']);
+
+        self::assertSame(Command::FAILURE, $exitCode);
+        self::assertMatchesRegularExpression('/Failed\s+1/', $this->commandTester->getDisplay());
+        self::assertStringContainsString('2:/docs/second.pdf: ', $this->commandTester->getDisplay());
+        GeneralUtility::rmdir($this->instancePath . '/fileadmin/docs', true);
     }
 
     #[Test]

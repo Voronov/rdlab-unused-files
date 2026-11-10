@@ -180,6 +180,36 @@
             <trans-unit id="message.staleIndex" resname="message.staleIndex">
                 <source>The reference index is older than %d hours. Run "typo3 referenceindex:update" before deleting files.</source>
             </trans-unit>
+            <trans-unit id="recycled.title" resname="recycled.title">
+                <source>Deleted files</source>
+            </trans-unit>
+            <trans-unit id="recycled.intro" resname="recycled.intro">
+                <source>Files this module or its delete command moved to a recycler folder. "Restore" moves a file back to the folder it came from. A file disappears from this list once it is restored or removed from the recycler folder for good.</source>
+            </trans-unit>
+            <trans-unit id="recycled.empty" resname="recycled.empty">
+                <source>No deleted files to restore.</source>
+            </trans-unit>
+            <trans-unit id="recycled.originalFolder" resname="recycled.originalFolder">
+                <source>Original folder</source>
+            </trans-unit>
+            <trans-unit id="recycled.deletedAt" resname="recycled.deletedAt">
+                <source>Deleted</source>
+            </trans-unit>
+            <trans-unit id="recycled.deletedBy" resname="recycled.deletedBy">
+                <source>Deleted by</source>
+            </trans-unit>
+            <trans-unit id="recycled.restore" resname="recycled.restore">
+                <source>Restore</source>
+            </trans-unit>
+            <trans-unit id="button.recycled" resname="button.recycled">
+                <source>Deleted files (%d)</source>
+            </trans-unit>
+            <trans-unit id="message.restored" resname="message.restored">
+                <source>%s was restored.</source>
+            </trans-unit>
+            <trans-unit id="message.restoreFailed.title" resname="message.restoreFailed.title">
+                <source>The file could not be restored</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

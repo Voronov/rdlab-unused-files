@@ -77,16 +77,19 @@ final class FileDeleterTest extends FunctionalTestCase
     #[Test]
     public function deleteMatchingPassesOverFilesThatCannotBeDeleted(): void
     {
-        // the first matches by path: /docs/second.pdf in the read-only storage 2, /other/Old_Report.pdf without its folder on disk
+        // the first matches by path: /docs/second.pdf in the read-only storage 2, /other/Old_Report.pdf missing on disk
+        GeneralUtility::mkdir_deep($this->instancePath . '/fileadmin/docs');
+        file_put_contents($this->instancePath . '/fileadmin/docs/second.pdf', 'second');
         $this->get(ConnectionPool::class)->getConnectionForTable('sys_file_storage')
             ->update('sys_file_storage', ['is_writable' => 0], ['uid' => 2]);
 
         $results = $this->get(FileDeleter::class)->deleteMatching(new UnusedFileFilter(), 2);
 
         self::assertSame(
-            [[11, DeleteOutcome::Failed], [10, DeleteOutcome::Failed], [2, DeleteOutcome::Deleted], [20, DeleteOutcome::Deleted]],
+            [[11, DeleteOutcome::Failed], [10, DeleteOutcome::Deleted], [2, DeleteOutcome::Deleted]],
             array_map(static fn(DeleteResult $result): array => [$result->fileUid, $result->outcome], $results)
         );
+        GeneralUtility::rmdir($this->instancePath . '/fileadmin/docs', true);
     }
 
     #[Test]
@@ -152,6 +155,18 @@ final class FileDeleterTest extends FunctionalTestCase
 
         self::assertSame(DeleteOutcome::Deleted, $result->outcome);
         self::assertSame(0, $this->get(ConnectionPool::class)->getConnectionForTable('sys_file')->count('uid', 'sys_file', ['uid' => 1]));
+    }
+
+    #[Test]
+    public function fileInFolderMissingOnDiskIsRemovedFromTheIndex(): void
+    {
+        GeneralUtility::rmdir($this->instancePath . '/fileadmin/user_upload', true);
+
+        $result = $this->get(FileDeleter::class)->delete(1);
+
+        self::assertSame(DeleteOutcome::Deleted, $result->outcome);
+        self::assertSame(0, $this->get(ConnectionPool::class)->getConnectionForTable('sys_file')->count('uid', 'sys_file', ['uid' => 1]));
+        self::assertDirectoryDoesNotExist($this->instancePath . '/fileadmin/_recycler_');
     }
 
     #[Test]

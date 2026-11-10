@@ -7,9 +7,11 @@ namespace RDLAB\UnusedFiles\Tests\Functional\Controller;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
 use RDLAB\UnusedFiles\Controller\UnusedFilesController;
+use RDLAB\UnusedFiles\Service\RecycledFileRepository;
 use TYPO3\CMS\Backend\Module\ModuleProvider;
 use TYPO3\CMS\Backend\Routing\Router;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
@@ -244,6 +246,71 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
 
         self::assertSame(303, $response->getStatusCode());
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertSame(ContextualFeedbackSeverity::ERROR, $this->flashMessages()[0]->getSeverity());
+    }
+
+    #[Test]
+    public function recycledListShowsDeletedFileAndRestorePutsItBack(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $this->flashMessages();
+
+        $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
+        self::assertStringContainsString('unused.pdf', $list);
+        self::assertStringContainsString('1:/user_upload/', $list);
+        self::assertSame(1, preg_match('/name="restore" value="(\d+)"/', $list, $matches));
+
+        $response = $this->dispatch('POST', [], ['action' => 'restore', 'restore' => $matches[1] ?? '']);
+
+        self::assertEquals(['action' => 'recycled', 'page' => '1'], $this->redirectArguments($response));
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        $messages = $this->flashMessages();
+        self::assertSame(ContextualFeedbackSeverity::OK, $messages[0]->getSeverity());
+        self::assertSame('1:/user_upload/unused.pdf was restored.', $messages[0]->getMessage());
+        self::assertStringContainsString('No deleted files to restore.', (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody());
+    }
+
+    #[Test]
+    public function recycledListDropsEntryOfFileThatLeftTheRecycler(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        unlink($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
+
+        $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
+
+        self::assertStringContainsString('No deleted files to restore.', $list);
+        self::assertSame(0, $this->get(RecycledFileRepository::class)->countAll());
+    }
+
+    #[Test]
+    public function deleteAllReportsFilesThatCouldNotBeDeleted(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->get(ConnectionPool::class)->getConnectionForTable('sys_file_storage')
+            ->update('sys_file_storage', ['is_writable' => 0], ['uid' => 2]);
+
+        GeneralUtility::mkdir_deep($this->instancePath . '/fileadmin/docs');
+        file_put_contents($this->instancePath . '/fileadmin/docs/second.pdf', 'second');
+
+        $this->dispatch('POST', ['id' => '2:/'], ['action' => 'deleteSelected', 'selectAll' => '1']);
+
+        $messages = $this->flashMessages();
+        self::assertCount(2, $messages);
+        self::assertSame(ContextualFeedbackSeverity::ERROR, $messages[0]->getSeverity());
+        self::assertSame('1 files could not be deleted', $messages[0]->getTitle());
+        self::assertStringStartsWith('2:/docs/second.pdf: ', $messages[0]->getMessage());
+        self::assertStringStartsWith('1 more files match the filter.', $messages[1]->getMessage());
+        GeneralUtility::rmdir($this->instancePath . '/fileadmin/docs', true);
+    }
+
+    #[Test]
+    public function restoreOfUnknownEntryShowsError(): void
+    {
+        $response = $this->dispatch('POST', [], ['action' => 'restore', 'restore' => '999']);
+
+        self::assertSame(303, $response->getStatusCode());
         self::assertSame(ContextualFeedbackSeverity::ERROR, $this->flashMessages()[0]->getSeverity());
     }
 

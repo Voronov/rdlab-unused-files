@@ -33,6 +33,7 @@ final class FileDeleter implements LoggerAwareInterface
     public function __construct(
         private readonly ResourceFactory $resourceFactory,
         private readonly UnusedFileFinder $finder,
+        private readonly RecycledFileRepository $recycledFiles,
     ) {}
 
     public function delete(int $fileUid): DeleteResult
@@ -48,7 +49,10 @@ final class FileDeleter implements LoggerAwareInterface
         }
 
         try {
-            $this->ensureRecyclerFolder($file);
+            // a file missing on disk is only dropped from the index
+            if ($file->exists()) {
+                $this->ensureRecyclerFolder($file);
+            }
         } catch (\Throwable $exception) {
             $this->logger?->error('Creating the recycler folder failed', ['file' => $file->getCombinedIdentifier(), 'exception' => $exception]);
             return new DeleteResult($fileUid, $file->getCombinedIdentifier(), DeleteOutcome::Failed, 'Could not create the ' . RecyclerFinder::FOLDER_NAME . ' folder: ' . $exception->getMessage());
@@ -137,6 +141,10 @@ final class FileDeleter implements LoggerAwareInterface
     private function remove(File $file, string $what): DeleteResult
     {
         $identifier = $file->getCombinedIdentifier();
+        $storageUid = $file->getStorage()->getUid();
+        $identifierInStorage = $file->getIdentifier();
+        $name = $file->getName();
+        $size = (int)$file->getSize();
         try {
             $file->getStorage()->deleteFile($file);
         } catch (\Throwable $exception) {
@@ -148,11 +156,20 @@ final class FileDeleter implements LoggerAwareInterface
         if ($outcome === DeleteOutcome::MovedToRecycler) {
             // FAL dropped the index entry on the move, index the file at its new place so the move date is known
             $file->getStorage()->getFile($file->getIdentifier());
+            $this->recycledFiles->add($storageUid, $identifierInStorage, $file->getIdentifier(), $name, $size, $this->getBackendUserName());
+        } else {
+            $this->recycledFiles->removeByRecyclerIdentifier($storageUid, $identifierInStorage);
         }
         $this->logger?->info($what . ' removed', ['file' => $identifier, 'outcome' => $outcome->value]);
         $this->writeSystemLog($what, $identifier, $outcome);
 
         return new DeleteResult($file->getUid(), $identifier, $outcome);
+    }
+
+    private function getBackendUserName(): string
+    {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        return $backendUser instanceof BackendUserAuthentication ? (string)($backendUser->user['username'] ?? '') : '';
     }
 
     private function writeSystemLog(string $what, string $identifier, DeleteOutcome $outcome): void

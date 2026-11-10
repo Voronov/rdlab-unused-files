@@ -49,6 +49,7 @@ Afterwards flush caches and open `File > Unused files`. The module is available 
 - Every file is checked again for references immediately before it is deleted, so a file that was referenced after the list was rendered is skipped.
 - Deleting is refused while the reference index is older than `referenceIndexMaxAgeHours`.
 - Deletions are logged to the TYPO3 system log (`Log` module).
+- **Restore:** the "Deleted files" button lists every file the module or the delete command moved to a recycler folder, with its original folder, date and user. "Restore" moves the file back to where it came from (the folder is created again when it is gone; a file that took the old place meanwhile is not overwritten). The file gets a new index record, so metadata such as title and alternative text is not restored. Files removed from the recycler, by `purgerecycler` or by hand, can no longer be restored.
 
 ## CLI
 
