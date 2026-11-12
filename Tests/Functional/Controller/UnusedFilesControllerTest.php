@@ -18,6 +18,7 @@ use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Registry;
+use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -282,6 +283,37 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
 
         self::assertStringContainsString('No deleted files to restore.', $list);
         self::assertSame(0, $this->get(RecycledFileRepository::class)->countAll());
+    }
+
+    #[Test]
+    public function recycledListKeepsEntriesOfAnOfflineStorage(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $connection = $this->get(ConnectionPool::class)->getConnectionForTable('sys_file_storage');
+        $configuration = (string)$connection->select(['configuration'], 'sys_file_storage', ['uid' => 1])->fetchOne();
+        $connection->update('sys_file_storage', ['configuration' => str_replace('fileadmin/', 'unmounted/', $configuration)], ['uid' => 1]);
+        $this->get(StorageRepository::class)->flush();
+
+        $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
+
+        self::assertStringContainsString('unused.pdf', $list);
+        self::assertSame(1, $this->get(RecycledFileRepository::class)->countAll());
+    }
+
+    #[Test]
+    public function recycledPageBeyondLastPageFallsBackToLastPage(): void
+    {
+        GeneralUtility::mkdir_deep($this->instancePath . '/fileadmin/_recycler_');
+        for ($number = 1; $number <= 51; $number++) {
+            file_put_contents($this->instancePath . '/fileadmin/_recycler_/file' . $number . '.pdf', 'x');
+            $this->get(RecycledFileRepository::class)->add(1, '/user_upload/file' . $number . '.pdf', '/_recycler_/file' . $number . '.pdf', 'file' . $number . '.pdf', 1, 'admin');
+        }
+
+        $list = (string)$this->dispatch('GET', ['action' => 'recycled', 'page' => '99'])->getBody();
+
+        self::assertStringNotContainsString('No deleted files to restore.', $list);
+        self::assertSame(1, preg_match_all('/name="restore" value="\d+"/', $list));
     }
 
     #[Test]

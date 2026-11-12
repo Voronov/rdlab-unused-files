@@ -48,6 +48,10 @@ final class FileDeleter implements LoggerAwareInterface
             return new DeleteResult($fileUid, $file->getCombinedIdentifier(), DeleteOutcome::SkippedReferenced);
         }
 
+        if (!$file->getStorage()->isBrowsable()) {
+            return new DeleteResult($fileUid, $file->getCombinedIdentifier(), DeleteOutcome::Failed, 'The storage is offline or not browsable');
+        }
+
         try {
             // a file missing on disk is only dropped from the index
             if ($file->exists()) {
@@ -153,15 +157,22 @@ final class FileDeleter implements LoggerAwareInterface
         }
 
         $outcome = $file->isDeleted() ? DeleteOutcome::Deleted : DeleteOutcome::MovedToRecycler;
-        if ($outcome === DeleteOutcome::MovedToRecycler) {
-            // FAL dropped the index entry on the move, index the file at its new place so the move date is known
-            $file->getStorage()->getFile($file->getIdentifier());
-            $this->recycledFiles->add($storageUid, $identifierInStorage, $file->getIdentifier(), $name, $size, $this->getBackendUserName());
-        } else {
-            $this->recycledFiles->removeByRecyclerIdentifier($storageUid, $identifierInStorage);
-        }
         $this->logger?->info($what . ' removed', ['file' => $identifier, 'outcome' => $outcome->value]);
         $this->writeSystemLog($what, $identifier, $outcome);
+        try {
+            if ($outcome === DeleteOutcome::MovedToRecycler) {
+                // FAL dropped the index entry on the move, index the file at its new place so the move date is known
+                $file->getStorage()->getFile($file->getIdentifier());
+                $this->recycledFiles->add($storageUid, $identifierInStorage, $file->getIdentifier(), $name, $size, $this->getBackendUserName());
+            } else {
+                $this->recycledFiles->removeByRecyclerIdentifier($storageUid, $identifierInStorage);
+            }
+        } catch (\Throwable $exception) {
+            $this->logger?->error('Updating the restore entries failed', ['file' => $identifier, 'exception' => $exception]);
+            if ($outcome === DeleteOutcome::MovedToRecycler) {
+                return new DeleteResult($file->getUid(), $identifier, DeleteOutcome::Failed, 'Moved to the recycler folder, but not recorded for restoring: ' . $exception->getMessage());
+            }
+        }
 
         return new DeleteResult($file->getUid(), $identifier, $outcome);
     }

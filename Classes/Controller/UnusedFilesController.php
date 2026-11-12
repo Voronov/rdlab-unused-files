@@ -207,10 +207,13 @@ final class UnusedFilesController
         $view = $this->moduleTemplateFactory->create($request);
         $view->setTitle($this->translate('recycled.title'));
 
+        $pageCount = max(1, (int)ceil($this->recycledFiles->countAll() / self::RECYCLED_PER_PAGE));
+        $page = min($page, $pageCount);
         $files = [];
         foreach ($this->recycledFiles->findPage($page, self::RECYCLED_PER_PAGE) as $row) {
             $storage = $this->storageRepository->findByUid((int)$row['storage']);
-            if ($storage === null || !$storage->hasFile((string)$row['recycler_identifier'])) {
+            // an offline storage cannot tell whether the file is still there
+            if ($storage === null || ($storage->isOnline() && !$storage->hasFile((string)$row['recycler_identifier']))) {
                 $this->recycledFiles->remove((int)$row['uid']);
                 continue;
             }
@@ -224,7 +227,6 @@ final class UnusedFilesController
                 'deletedBy' => (string)$row['deleted_by'],
             ];
         }
-        $pageCount = max(1, (int)ceil($this->recycledFiles->countAll() / self::RECYCLED_PER_PAGE));
 
         $buttonBar = $view->getDocHeaderComponent()->getButtonBar();
         $backButton = $buttonBar->makeLinkButton()

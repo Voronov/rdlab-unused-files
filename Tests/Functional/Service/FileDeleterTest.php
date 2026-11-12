@@ -147,6 +147,35 @@ final class FileDeleterTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function fileOfANonBrowsableStorageIsNotDeleted(): void
+    {
+        $this->get(ConnectionPool::class)->getConnectionForTable('sys_file_storage')
+            ->update('sys_file_storage', ['is_browsable' => 0], ['uid' => 1]);
+
+        $result = $this->get(FileDeleter::class)->delete(1);
+
+        self::assertSame(DeleteOutcome::Failed, $result->outcome);
+        self::assertSame('The storage is offline or not browsable', $result->message);
+        self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+    }
+
+    #[Test]
+    public function moveThatCannotBeRecordedForRestoringIsReported(): void
+    {
+        $connection = $this->get(ConnectionPool::class)->getConnectionForTable('tx_rdlabunusedfiles_recycled');
+        $connection->executeStatement('ALTER TABLE tx_rdlabunusedfiles_recycled RENAME TO tx_rdlabunusedfiles_recycled_away');
+        try {
+            $result = $this->get(FileDeleter::class)->delete(1);
+        } finally {
+            $connection->executeStatement('ALTER TABLE tx_rdlabunusedfiles_recycled_away RENAME TO tx_rdlabunusedfiles_recycled');
+        }
+
+        self::assertSame(DeleteOutcome::Failed, $result->outcome);
+        self::assertStringStartsWith('Moved to the recycler folder, but not recorded for restoring: ', $result->message);
+        self::assertFileExists($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
+    }
+
+    #[Test]
     public function fileMissingOnDiskIsRemovedFromTheIndex(): void
     {
         unlink($this->instancePath . '/fileadmin/user_upload/unused.pdf');

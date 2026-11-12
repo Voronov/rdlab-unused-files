@@ -15,7 +15,7 @@ A file is listed when **all** of the following are true:
 2. `sys_file_reference` has no live row for the file, and no soft-deleted row whose record (content element, news, ...) is itself in the recycler: restoring the record restores its file relations. A file an editor removed from a live element shows up right away. Run `cleanup:deletedrecords` (EXT:lowlevel) first if files of records in the recycler should show up too.
 3. The file path does not occur in any text field that can hold a link: RTE texts, link fields, pages of type "Link to external URL", flexforms, TypoScript records (URL-encoded or not, case-insensitive, soft-deleted records included). The reference index does not record URLs, so a file linked by its absolute URL is only found this way. `sys_refindex` string references (`ref_table = _STRING`) ending with the file path count as well.
 
-Files in `_processed_`, `_temp_` and `_recycler_` (configurable), files marked as missing and the configured file names (`index.html`, `.htaccess`) are never listed or deleted.
+Files in `_processed_`, `_temp_` and `_recycler_` (configurable), files marked as missing and the configured file names (`index.html`, `.htaccess`) are never listed or deleted. A file that is gone from disk but not marked as missing yet is still listed; deleting it only removes its index record and counts as deleted.
 
 **What TYPO3 cannot know:** files that are only used by hard-coded paths in templates, TypoScript or CSS, by folder based usage (file collections of type "folder", TypoScript `FILES` with `folders`, plugins that read a folder directly), by newsletters, by direct URLs on other websites or by search engines. Add such folders to `excludedFolders` and review the list folder by folder before deleting; deleted files wait in the `_recycler_` folder (see below).
 
@@ -25,7 +25,7 @@ Files in `_processed_`, `_temp_` and `_recycler_` (configurable), files marked a
 composer require rdlab/unused-files
 ```
 
-Afterwards flush caches and open `File > Unused files`. The module is available to admin users only: the list covers all storages regardless of file mounts.
+Afterwards update the database schema (`vendor/bin/typo3 extension:setup` or `Admin Tools > Maintenance > Analyze Database Structure`; also needed when updating from a version before 1.7.0), flush caches and open `File > Unused files`. The module is available to admin users only: the list covers all storages regardless of file mounts.
 
 ## Before you use it
 
@@ -38,7 +38,7 @@ Afterwards flush caches and open `File > Unused files`. The module is available 
    vendor/bin/typo3 referenceindex:update
    ```
    The module and both commands warn when the index is older than the configured maximum age (default 24 hours), and in that case the module refuses to delete and the delete command refuses to run with `--execute`. A scheduler task for `referenceindex:update` is recommended.
-3. **Plan the recycler cleanup.** Deleted files are never removed right away: FAL moves them to the nearest `_recycler_` folder, and the extension creates `_recycler_` in the storage root (`fileadmin/_recycler_`) on the first deletion when the storage has none. If the folder cannot be created (read-only storage), the file is not deleted and the module reports it. A deletion can be undone by moving the file back in the file list until the recycler is emptied. TYPO3 never empties it by itself; `rdlab:unusedfiles:purgerecycler --execute` (see CLI, works as a scheduler task) deletes files that have been in a `_recycler_` folder for at least `--min-age-days` days, default 30. The command indexes the recycler folders on every run: a file this extension moved there counts from the move, a file deleted in the file list counts from the first run that saw it, so run it daily.
+3. **Plan the recycler cleanup.** Deleted files are never removed right away: FAL moves them to the nearest `_recycler_` folder, and the extension creates `_recycler_` in the storage root (`fileadmin/_recycler_`) on the first deletion when the storage has none. If the folder cannot be created (read-only storage) or the storage is offline or not browsable, the file is not deleted and the module reports it. A deletion can be undone by moving the file back in the file list until the recycler is emptied. TYPO3 never empties it by itself; `rdlab:unusedfiles:purgerecycler --execute` (see CLI, works as a scheduler task) deletes files that have been in a `_recycler_` folder for at least `--min-age-days` days, default 30. The command indexes the recycler folders on every run: a file this extension moved there counts from the move, a file deleted in the file list counts from the first run that saw it, so run it daily.
 
 ## Backend module
 
@@ -48,8 +48,8 @@ Afterwards flush caches and open `File > Unused files`. The module is available 
 - Selection works like in a mail client: the header checkbox selects the page, a banner then offers to select all files matching the filter. Deleting the whole selection processes at most `bulkDeleteLimit` files per request (default 200) and tells you how many are left.
 - Every file is checked again for references immediately before it is deleted, so a file that was referenced after the list was rendered is skipped.
 - Deleting is refused while the reference index is older than `referenceIndexMaxAgeHours`.
-- Deletions are logged to the TYPO3 system log (`Log` module).
-- **Restore:** the "Deleted files" button lists every file the module or the delete command moved to a recycler folder, with its original folder, date and user. "Restore" moves the file back to where it came from (the folder is created again when it is gone; a file that took the old place meanwhile is not overwritten). The file gets a new index record, so metadata such as title and alternative text is not restored. Files removed from the recycler, by `purgerecycler` or by hand, can no longer be restored.
+- Deletions and restores are logged to the TYPO3 system log (`Log` module).
+- **Restore:** the "Deleted files" button lists every file the module or the delete command moved to a recycler folder, with its original folder, date and user. "Restore" moves the file back to where it came from (the folder is created again when it is gone; a file that took the old place meanwhile is not overwritten). The file gets a new index record, so metadata such as title and alternative text is not restored. TYPO3 cleans the file name on every move, so a file with a legacy name (spaces, brackets) comes back under the cleaned name, which the message shows. Files removed from the recycler, by `purgerecycler` or by hand, can no longer be restored; while a storage is offline its entries are kept.
 
 ## CLI
 
