@@ -47,7 +47,7 @@ final class UnusedFileFilter
             storage: max(0, (int)($data['storage'] ?? 0)),
             folder: $folder,
             extension: strtolower(trim((string)($data['extension'] ?? ''), " .\t\n\r")),
-            minAgeDays: max(0, (int)($data['minAgeDays'] ?? 0)),
+            minAgeDays: max(0, (int)($data['minAgeDays'] ?? 0), 7 * min(intdiv(PHP_INT_MAX, 7), (int)($data['minAgeWeeks'] ?? 0))),
             search: trim((string)($data['search'] ?? '')),
             page: max(1, (int)($data['page'] ?? 1)),
             itemsPerPage: $itemsPerPage,
@@ -122,6 +122,12 @@ final class UnusedFileFilter
             $result['itemsPerPage'] = $this->itemsPerPage;
         }
         return $result;
+    }
+
+    /** Minimum age in weeks (rounded up), the unit of the backend filter */
+    public function getMinAgeWeeks(): int
+    {
+        return (int)ceil($this->minAgeDays / 7);
     }
 
     public function isActive(): bool

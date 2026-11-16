@@ -75,6 +75,18 @@ final class UnusedFileFilterTest extends UnitTestCase
     }
 
     #[Test]
+    public function fromArrayConvertsWeeksToDays(): void
+    {
+        $filter = UnusedFileFilter::fromArray(['minAgeWeeks' => '2']);
+
+        self::assertSame(14, $filter->minAgeDays);
+        self::assertSame(2, $filter->getMinAgeWeeks());
+        self::assertSame(2, (new UnusedFileFilter(minAgeDays: 10))->getMinAgeWeeks());
+        self::assertSame(0, UnusedFileFilter::fromArray(['minAgeWeeks' => '-1'])->minAgeDays);
+        self::assertGreaterThan(0, UnusedFileFilter::fromArray(['minAgeWeeks' => '99999999999999999999'])->minAgeDays);
+    }
+
+    #[Test]
     public function fromArrayAcceptsAllowedItemsPerPage(): void
     {
         self::assertSame(200, UnusedFileFilter::fromArray(['itemsPerPage' => '200'])->itemsPerPage);

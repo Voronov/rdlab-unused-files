@@ -45,8 +45,8 @@
             <trans-unit id="filter.extension.all" resname="filter.extension.all">
                 <source>All types</source>
             </trans-unit>
-            <trans-unit id="filter.minAgeDays" resname="filter.minAgeDays">
-                <source>Older than (days)</source>
+            <trans-unit id="filter.minAgeWeeks" resname="filter.minAgeWeeks">
+                <source>Older than (weeks)</source>
             </trans-unit>
             <trans-unit id="filter.search" resname="filter.search">
                 <source>File name contains</source>

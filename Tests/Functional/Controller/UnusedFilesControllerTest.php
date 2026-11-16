@@ -152,6 +152,16 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function minimumAgeIsEnteredAndShownInWeeks(): void
+    {
+        $response = $this->dispatch('POST', [], ['action' => 'filter', 'filter' => ['minAgeWeeks' => '2']]);
+        self::assertEquals(['filter' => ['minAgeDays' => '14']], $this->redirectArguments($response));
+
+        $html = (string)$this->dispatch('GET', ['filter' => ['minAgeDays' => '14']])->getBody();
+        self::assertStringContainsString('name="filter[minAgeWeeks]" value="2"', $html);
+    }
+
+    #[Test]
     public function unknownPostActionRedirectsToListKeepingFilter(): void
     {
         $response = $this->dispatch('POST', [], ['filter' => ['storage' => '2', 'page' => '2']]);

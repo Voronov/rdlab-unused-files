@@ -43,7 +43,7 @@ Afterwards update the database schema (`vendor/bin/typo3 extension:setup` or `Ad
 ## Backend module
 
 - The folder selected in the folder tree scopes the list (including subfolders); without a selection all storages are listed.
-- Filter by file type, minimum age (days) and file name.
+- Filter by file type, minimum age (weeks) and file name.
 - "Download CSV" in the doc header exports the current filter.
 - Selection works like in a mail client: the header checkbox selects the page, a banner then offers to select all files matching the filter. Deleting the whole selection processes at most `bulkDeleteLimit` files per request (default 200) and tells you how many are left.
 - Every file is checked again for references immediately before it is deleted, so a file that was referenced after the list was rendered is skipped.
