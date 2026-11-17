@@ -40,6 +40,12 @@
         <div class="panel-body">
             <form method="post" action="{listUri}" class="row g-3 align-items-end">
                 <input type="hidden" name="action" value="filter" />
+                <f:if condition="{filter.sort}">
+                    <input type="hidden" name="filter[sort]" value="{filter.sort}" />
+                </f:if>
+                <f:if condition="{filter.descending}">
+                    <input type="hidden" name="filter[descending]" value="1" />
+                </f:if>
                 <f:if condition="{folderId}">
                     <input type="hidden" name="id" value="{folderId}" />
                 </f:if>
@@ -137,12 +143,12 @@
                                         <input type="checkbox" class="form-check-input" data-rdlab-toggle-all="1" title="{f:translate(key: '{lll}list.toggleAll')}" />
                                     </span>
                                 </th>
-                                <th><f:translate key="{lll}list.file" /></th>
-                                <th><f:translate key="{lll}list.folder" /></th>
-                                <th><f:translate key="{lll}list.type" /></th>
-                                <th class="text-end"><f:translate key="{lll}list.size" /></th>
-                                <th><f:translate key="{lll}list.created" /></th>
-                                <th><f:translate key="{lll}list.modified" /></th>
+                                <th><f:render section="SortLink" arguments="{column: 'name', label: '{lll}list.file', uri: sortUris.name, filter: filter}" /></th>
+                                <th><f:render section="SortLink" arguments="{column: 'folder', label: '{lll}list.folder', uri: sortUris.folder, filter: filter}" /></th>
+                                <th><f:render section="SortLink" arguments="{column: 'type', label: '{lll}list.type', uri: sortUris.type, filter: filter}" /></th>
+                                <th class="text-end"><f:render section="SortLink" arguments="{column: 'size', label: '{lll}list.size', uri: sortUris.size, filter: filter}" /></th>
+                                <th><f:render section="SortLink" arguments="{column: 'uploaded', label: '{lll}list.created', uri: sortUris.uploaded, filter: filter}" /></th>
+                                <th><f:render section="SortLink" arguments="{column: 'modified', label: '{lll}list.modified', uri: sortUris.modified, filter: filter}" /></th>
                                 <th><f:translate key="{lll}list.status" /></th>
                                 <th class="col-control"></th>
                             </tr>
@@ -247,5 +253,9 @@
             </div>
         </f:else>
     </f:if>
+</f:section>
+
+<f:section name="SortLink">
+    <a href="{uri}" class="text-nowrap"><f:translate key="{label}" /><f:if condition="{filter.sortColumn} == {column}"> <core:icon identifier="actions-sort-amount-{f:if(condition: filter.descending, then: 'down', else: 'up')}" size="small" /></f:if></a>
 </f:section>
 </html>

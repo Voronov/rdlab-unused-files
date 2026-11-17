@@ -170,9 +170,28 @@ final class UnusedFileFilterTest extends UnitTestCase
     #[Test]
     public function toArrayRoundTripsThroughFromArray(): void
     {
-        $filter = new UnusedFileFilter(1, '/a/', 'pdf', 30, 'x', 2, 100);
+        $filter = new UnusedFileFilter(1, '/a/', 'pdf', 30, 'x', 2, 100, 'uploaded', true);
 
         self::assertEquals($filter, UnusedFileFilter::fromArray($filter->toArray()));
+    }
+
+    #[Test]
+    public function fromArrayIgnoresUnknownSortColumn(): void
+    {
+        self::assertSame('', UnusedFileFilter::fromArray(['sort' => 'f.uid; DROP'])->sort);
+    }
+
+    #[Test]
+    public function withSortToggledStartsAscendingAndReversesOnSecondClick(): void
+    {
+        $filter = new UnusedFileFilter(page: 3);
+
+        $sorted = $filter->withSortToggled('uploaded');
+        self::assertSame(['uploaded', false, 1], [$sorted->sort, $sorted->descending, $sorted->page]);
+        self::assertTrue($sorted->withSortToggled('uploaded')->descending);
+        self::assertFalse($sorted->withSortToggled('uploaded')->withSortToggled('uploaded')->descending);
+        self::assertFalse($sorted->withSortToggled('size')->descending);
+        self::assertTrue($filter->withSortToggled('folder')->descending, 'the default order is by folder');
     }
 
     /**

@@ -112,6 +112,10 @@ final class UnusedFilesController
             'total' => $totals['count'],
             'totalSize' => $totals['size'],
             'pagination' => $this->buildPagination($filter, $pageCount, $folderId),
+            'sortUris' => array_combine(
+                UnusedFileFilter::SORT_COLUMNS,
+                array_map(fn(string $sort): string => $this->listUri($filter->withSortToggled($sort), $folderId), UnusedFileFilter::SORT_COLUMNS)
+            ),
             'multipleStorages' => count($this->finder->getStorages()) > 1,
             'extensions' => $this->finder->getExtensions(),
             'itemsPerPageOptions' => UnusedFileFilter::ALLOWED_ITEMS_PER_PAGE,

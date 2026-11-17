@@ -11,6 +11,7 @@ final class UnusedFileFilter
 {
     public const DEFAULT_ITEMS_PER_PAGE = 50;
     public const ALLOWED_ITEMS_PER_PAGE = [25, 50, 100, 200];
+    public const SORT_COLUMNS = ['name', 'folder', 'type', 'size', 'uploaded', 'modified'];
 
     public function __construct(
         /** 0 = all storages */
@@ -25,6 +26,9 @@ final class UnusedFileFilter
         public readonly string $search = '',
         public readonly int $page = 1,
         public readonly int $itemsPerPage = self::DEFAULT_ITEMS_PER_PAGE,
+        /** One of SORT_COLUMNS, empty = by path */
+        public readonly string $sort = '',
+        public readonly bool $descending = false,
     ) {}
 
     /**
@@ -42,6 +46,10 @@ final class UnusedFileFilter
         if (!in_array($itemsPerPage, self::ALLOWED_ITEMS_PER_PAGE, true)) {
             $itemsPerPage = self::DEFAULT_ITEMS_PER_PAGE;
         }
+        $sort = (string)($data['sort'] ?? '');
+        if (!in_array($sort, self::SORT_COLUMNS, true)) {
+            $sort = '';
+        }
 
         return new self(
             storage: max(0, (int)($data['storage'] ?? 0)),
@@ -51,6 +59,8 @@ final class UnusedFileFilter
             search: trim((string)($data['search'] ?? '')),
             page: max(1, (int)($data['page'] ?? 1)),
             itemsPerPage: $itemsPerPage,
+            sort: $sort,
+            descending: (bool)($data['descending'] ?? false),
         );
     }
 
@@ -64,6 +74,8 @@ final class UnusedFileFilter
             $this->search,
             max(1, $page),
             $this->itemsPerPage,
+            $this->sort,
+            $this->descending,
         );
     }
 
@@ -88,6 +100,24 @@ final class UnusedFileFilter
             $this->search,
             $this->page,
             $this->itemsPerPage,
+            $this->sort,
+            $this->descending,
+        );
+    }
+
+    /** Sorted by the given column from page 1, a second click on the same column reverses the order */
+    public function withSortToggled(string $sort): self
+    {
+        return new self(
+            $this->storage,
+            $this->folder,
+            $this->extension,
+            $this->minAgeDays,
+            $this->search,
+            1,
+            $this->itemsPerPage,
+            $sort,
+            $sort === $this->getSortColumn() && !$this->descending,
         );
     }
 
@@ -121,7 +151,19 @@ final class UnusedFileFilter
         if ($this->itemsPerPage !== self::DEFAULT_ITEMS_PER_PAGE) {
             $result['itemsPerPage'] = $this->itemsPerPage;
         }
+        if ($this->sort !== '') {
+            $result['sort'] = $this->sort;
+        }
+        if ($this->descending) {
+            $result['descending'] = 1;
+        }
         return $result;
+    }
+
+    /** The column the list is sorted by, the default order is by path */
+    public function getSortColumn(): string
+    {
+        return $this->sort === '' ? 'folder' : $this->sort;
     }
 
     /** Minimum age in weeks (rounded up), the unit of the backend filter */

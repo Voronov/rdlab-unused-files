@@ -22,6 +22,15 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  */
 final class UnusedFileFinder
 {
+    private const SORT_FIELDS = [
+        'name' => 'f.name',
+        'folder' => 'f.identifier',
+        'type' => 'f.extension',
+        'size' => 'f.size',
+        'uploaded' => 'f.creation_date',
+        'modified' => 'f.modification_date',
+    ];
+
     /** @var list<int>|null */
     private ?array $stringReferencedUids = null;
 
@@ -61,9 +70,9 @@ final class UnusedFileFinder
     {
         $queryBuilder = $this->createBaseQuery($filter);
         $this->selectFileColumns($queryBuilder);
+        $this->applySorting($queryBuilder, $filter);
 
         return $queryBuilder
-            ->orderBy('f.identifier', 'ASC')
             ->setFirstResult(($filter->page - 1) * $filter->itemsPerPage)
             ->setMaxResults($filter->itemsPerPage)
             ->executeQuery()
@@ -77,7 +86,7 @@ final class UnusedFileFinder
     {
         $queryBuilder = $this->createBaseQuery($filter);
         $this->selectFileColumns($queryBuilder);
-        $queryBuilder->orderBy('f.identifier', 'ASC');
+        $this->applySorting($queryBuilder, $filter);
         if ($limit > 0) {
             $queryBuilder->setMaxResults($limit);
         }
@@ -149,6 +158,16 @@ final class UnusedFileFinder
         $queryBuilder
             ->select('f.uid', 'f.storage', 'f.identifier', 'f.name', 'f.extension', 'f.size', 'f.creation_date', 'f.modification_date')
             ->addSelectLiteral($queryBuilder->quoteIdentifier('s.name') . ' AS ' . $queryBuilder->quoteIdentifier('storage_name'));
+    }
+
+    private function applySorting(QueryBuilder $queryBuilder, UnusedFileFilter $filter): void
+    {
+        $field = self::SORT_FIELDS[$filter->sort] ?? 'f.identifier';
+        $queryBuilder->orderBy($field, $filter->descending ? 'DESC' : 'ASC');
+        // stable order for pagination and the batch-wise deletion
+        if ($field !== 'f.identifier') {
+            $queryBuilder->addOrderBy('f.identifier', 'ASC');
+        }
     }
 
     private function createBaseQuery(UnusedFileFilter $filter): QueryBuilder

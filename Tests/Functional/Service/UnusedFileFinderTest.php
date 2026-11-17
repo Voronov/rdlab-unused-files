@@ -57,6 +57,14 @@ final class UnusedFileFinderTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function findAllSortsByUploadDateWithPathAsTieBreaker(): void
+    {
+        // 10 is the oldest file, all others share one upload date
+        self::assertSame([10, 11, 2, 20, 19, 1], $this->findUids(new UnusedFileFilter(sort: 'uploaded')));
+        self::assertSame([11, 2, 20, 19, 1, 10], $this->findUids(new UnusedFileFilter(sort: 'uploaded', descending: true)));
+    }
+
+    #[Test]
     public function filterByStorage(): void
     {
         self::assertSame([11], $this->findUids(new UnusedFileFilter(storage: 2)));
