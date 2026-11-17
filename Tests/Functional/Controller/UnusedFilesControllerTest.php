@@ -283,6 +283,54 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function purgeDeletesRecycledFilePermanently(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $this->flashMessages();
+        $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
+        self::assertSame(1, preg_match('/name="purge"\s+value="(\d+)"/', $list, $matches));
+
+        $response = $this->dispatch('POST', [], ['purge' => $matches[1] ?? '', 'page' => '1']);
+
+        self::assertEquals(['action' => 'recycled', 'page' => '1'], $this->redirectArguments($response));
+        self::assertFileDoesNotExist($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
+        self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unused.pdf');
+        self::assertSame('Files deleted permanently: 1.', $this->flashMessages()[0]->getMessage());
+        self::assertSame(0, $this->get(RecycledFileRepository::class)->countAll());
+    }
+
+    #[Test]
+    public function purgeSelectedDeletesSelectedRecycledFilesOnly(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['action' => 'deleteSelected', 'files' => ['1', '2']]);
+        $this->flashMessages();
+        $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
+        self::assertSame(2, preg_match_all('/name="files\[\]" value="(\d+)"/', $list, $matches));
+
+        $this->dispatch('POST', [], ['action' => 'purgeSelected', 'files' => [$matches[1][0]]]);
+
+        self::assertSame(ContextualFeedbackSeverity::OK, $this->flashMessages()[0]->getSeverity());
+        self::assertSame(1, $this->get(RecycledFileRepository::class)->countAll());
+    }
+
+    #[Test]
+    public function purgeOfEntryWhoseFileLeftTheRecyclerDropsTheEntry(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $this->flashMessages();
+        unlink($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
+        $uid = (int)$this->get(RecycledFileRepository::class)->findPage(1, 10)[0]['uid'];
+
+        $this->dispatch('POST', [], ['purge' => (string)$uid]);
+
+        self::assertSame([], $this->flashMessages());
+        self::assertSame(0, $this->get(RecycledFileRepository::class)->countAll());
+    }
+
+    #[Test]
     public function recycledListDropsEntryOfFileThatLeftTheRecycler(): void
     {
         $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());

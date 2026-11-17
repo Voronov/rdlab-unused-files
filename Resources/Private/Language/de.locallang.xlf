@@ -244,8 +244,8 @@
                 <target>Gelöschte Dateien</target>
             </trans-unit>
             <trans-unit id="recycled.intro" resname="recycled.intro">
-                <source>Files this module or its delete command moved to a recycler folder. "Restore" moves a file back to the folder it came from. A file disappears from this list once it is restored or removed from the recycler folder for good.</source>
-                <target>Dateien, die dieses Modul oder sein Löschbefehl in einen Papierkorb-Ordner verschoben hat. „Wiederherstellen“ verschiebt eine Datei zurück in ihren ursprünglichen Ordner. Eine Datei verschwindet aus dieser Liste, sobald sie wiederhergestellt oder endgültig aus dem Papierkorb-Ordner entfernt wurde.</target>
+                <source>Files this module or its delete command moved to a recycler folder. "Restore" moves a file back to the folder it came from, the delete button removes it for good. A file disappears from this list once it is restored or removed from the recycler folder for good.</source>
+                <target>Dateien, die dieses Modul oder sein Löschbefehl in einen Papierkorb-Ordner verschoben hat. „Wiederherstellen“ verschiebt eine Datei zurück in ihren ursprünglichen Ordner, die Löschen-Schaltfläche entfernt sie endgültig. Eine Datei verschwindet aus dieser Liste, sobald sie wiederhergestellt oder endgültig aus dem Papierkorb-Ordner entfernt wurde.</target>
             </trans-unit>
             <trans-unit id="recycled.empty" resname="recycled.empty">
                 <source>No deleted files to restore.</source>
@@ -278,6 +278,26 @@
             <trans-unit id="message.restoreFailed.title" resname="message.restoreFailed.title">
                 <source>The file could not be restored</source>
                 <target>Die Datei konnte nicht wiederhergestellt werden</target>
+            </trans-unit>
+            <trans-unit id="recycled.purge" resname="recycled.purge">
+                <source>Delete permanently</source>
+                <target>Endgültig löschen</target>
+            </trans-unit>
+            <trans-unit id="recycled.purge.confirm" resname="recycled.purge.confirm">
+                <source>Permanently delete "%s"? This cannot be undone.</source>
+                <target>„%s“ endgültig löschen? Das kann nicht rückgängig gemacht werden.</target>
+            </trans-unit>
+            <trans-unit id="recycled.purgeSelected" resname="recycled.purgeSelected">
+                <source>Delete selected permanently</source>
+                <target>Ausgewählte endgültig löschen</target>
+            </trans-unit>
+            <trans-unit id="recycled.purgeSelected.confirm" resname="recycled.purgeSelected.confirm">
+                <source>Permanently delete %d selected files? This cannot be undone.</source>
+                <target>%d ausgewählte Dateien endgültig löschen? Das kann nicht rückgängig gemacht werden.</target>
+            </trans-unit>
+            <trans-unit id="message.purged" resname="message.purged">
+                <source>Files deleted permanently: %d.</source>
+                <target>Endgültig gelöschte Dateien: %d.</target>
             </trans-unit>
         </body>
     </file>

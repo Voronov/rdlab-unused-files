@@ -184,7 +184,7 @@
                 <source>Deleted files</source>
             </trans-unit>
             <trans-unit id="recycled.intro" resname="recycled.intro">
-                <source>Files this module or its delete command moved to a recycler folder. "Restore" moves a file back to the folder it came from. A file disappears from this list once it is restored or removed from the recycler folder for good.</source>
+                <source>Files this module or its delete command moved to a recycler folder. "Restore" moves a file back to the folder it came from, the delete button removes it for good. A file disappears from this list once it is restored or removed from the recycler folder for good.</source>
             </trans-unit>
             <trans-unit id="recycled.empty" resname="recycled.empty">
                 <source>No deleted files to restore.</source>
@@ -209,6 +209,21 @@
             </trans-unit>
             <trans-unit id="message.restoreFailed.title" resname="message.restoreFailed.title">
                 <source>The file could not be restored</source>
+            </trans-unit>
+            <trans-unit id="recycled.purge" resname="recycled.purge">
+                <source>Delete permanently</source>
+            </trans-unit>
+            <trans-unit id="recycled.purge.confirm" resname="recycled.purge.confirm">
+                <source>Permanently delete "%s"? This cannot be undone.</source>
+            </trans-unit>
+            <trans-unit id="recycled.purgeSelected" resname="recycled.purgeSelected">
+                <source>Delete selected permanently</source>
+            </trans-unit>
+            <trans-unit id="recycled.purgeSelected.confirm" resname="recycled.purgeSelected.confirm">
+                <source>Permanently delete %d selected files? This cannot be undone.</source>
+            </trans-unit>
+            <trans-unit id="message.purged" resname="message.purged">
+                <source>Files deleted permanently: %d.</source>
             </trans-unit>
         </body>
     </file>

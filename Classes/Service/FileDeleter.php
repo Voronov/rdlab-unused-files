@@ -15,6 +15,7 @@ use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\FolderInterface;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\SysLog\Action\File as SystemLogFileAction;
 use TYPO3\CMS\Core\SysLog\Error as SystemLogErrorClassification;
 use TYPO3\CMS\Core\SysLog\Type as SystemLogType;
@@ -34,6 +35,7 @@ final class FileDeleter implements LoggerAwareInterface
         private readonly ResourceFactory $resourceFactory,
         private readonly UnusedFileFinder $finder,
         private readonly RecycledFileRepository $recycledFiles,
+        private readonly StorageRepository $storageRepository,
     ) {}
 
     public function delete(int $fileUid): DeleteResult
@@ -140,6 +142,38 @@ final class FileDeleter implements LoggerAwareInterface
         }
 
         return $this->remove($file, 'Recycled file');
+    }
+
+    /**
+     * Permanently deletes the file of a "Deleted files" entry. An entry whose
+     * file is no longer in the recycler folder is dropped.
+     */
+    public function purgeRecycledEntry(int $entryUid): DeleteResult
+    {
+        $row = $this->recycledFiles->findByUid($entryUid);
+        if ($row === null) {
+            return new DeleteResult(0, '', DeleteOutcome::SkippedNotFound);
+        }
+        $recyclerIdentifier = (string)$row['recycler_identifier'];
+        $combinedIdentifier = (int)$row['storage'] . ':' . $recyclerIdentifier;
+        $storage = $this->storageRepository->findByUid((int)$row['storage']);
+        if ($storage !== null && !$storage->isOnline()) {
+            return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::Failed, 'The storage is offline');
+        }
+        if ($storage === null || !$storage->hasFile($recyclerIdentifier)) {
+            $this->recycledFiles->remove($entryUid);
+            return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::SkippedNotFound);
+        }
+
+        try {
+            $file = $storage->getFile($recyclerIdentifier);
+        } catch (\Throwable $exception) {
+            return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::Failed, $exception->getMessage());
+        }
+        if (!$file instanceof File) {
+            return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::Failed, 'Not a file');
+        }
+        return $this->purgeFromRecycler($file->getUid());
     }
 
     private function remove(File $file, string $what): DeleteResult

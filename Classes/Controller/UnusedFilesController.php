@@ -68,11 +68,17 @@ final class UnusedFilesController
             ->withCombinedFolderIdentifier($folderId);
 
         if ($isPost) {
-            $action = (string)($params['action'] ?? (isset($params['deleteSingle']) ? 'deleteSingle' : ''));
+            $action = (string)($params['action'] ?? match (true) {
+                isset($params['deleteSingle']) => 'deleteSingle',
+                isset($params['restore']) => 'restore',
+                isset($params['purge']) => 'purge',
+                default => '',
+            });
             return match ($action) {
                 'filter' => $this->redirectToList($filter->withPage(1), $folderId),
                 'deleteSingle', 'deleteSelected', 'deleteAll' => $this->handleDelete($request, $action, $filter, $folderId),
                 'restore' => $this->handleRestore($request, $folderId),
+                'purge', 'purgeSelected' => $this->handlePurge($request, $action, $folderId),
                 default => $this->redirectToList($filter, $folderId),
             };
         }
@@ -208,6 +214,8 @@ final class UnusedFilesController
      */
     private function renderRecycled(ServerRequestInterface $request, int $page, string $folderId): ResponseInterface
     {
+        $this->pageRenderer->loadJavaScriptModule('@rdlab/unused-files/unused-files.js');
+
         $view = $this->moduleTemplateFactory->create($request);
         $view->setTitle($this->translate('recycled.title'));
 
@@ -264,6 +272,46 @@ final class UnusedFilesController
             $view->addFlashMessage(
                 trim($result->identifier . ': ' . $result->message, ': '),
                 $this->translate('message.restoreFailed.title'),
+                ContextualFeedbackSeverity::ERROR
+            );
+        }
+
+        return new RedirectResponse(
+            $this->listUri(new UnusedFileFilter(), $folderId, ['action' => 'recycled', 'page' => max(1, (int)($body['page'] ?? 1))]),
+            303
+        );
+    }
+
+    /**
+     * Permanently deletes files from the "Deleted files" list: one entry or the selected ones.
+     */
+    private function handlePurge(ServerRequestInterface $request, string $action, string $folderId): ResponseInterface
+    {
+        $body = (array)$request->getParsedBody();
+        $view = $this->moduleTemplateFactory->create($request);
+        $uids = $action === 'purge' ? [(int)($body['purge'] ?? 0)] : array_map('intval', (array)($body['files'] ?? []));
+        $uids = array_values(array_unique(array_filter($uids, static fn(int $uid): bool => $uid > 0)));
+        $results = array_map($this->fileDeleter->purgeRecycledEntry(...), $uids);
+
+        $purged = 0;
+        $failures = [];
+        foreach ($results as $result) {
+            if ($result->outcome === DeleteOutcome::Deleted) {
+                $purged++;
+            } elseif ($result->outcome === DeleteOutcome::Failed || $result->outcome === DeleteOutcome::SkippedReferenced) {
+                $failures[] = trim($result->identifier . ': ' . $result->message, ': ');
+            }
+        }
+        if ($results === []) {
+            $view->addFlashMessage($this->translate('message.nothingSelected'), '', ContextualFeedbackSeverity::WARNING);
+        }
+        if ($purged > 0) {
+            $view->addFlashMessage($this->translate('message.purged', [$purged]), '', ContextualFeedbackSeverity::OK);
+        }
+        if ($failures !== []) {
+            $view->addFlashMessage(
+                implode("\n", array_slice($failures, 0, 5)),
+                $this->translate('message.failed.title', [count($failures)]),
                 ContextualFeedbackSeverity::ERROR
             );
         }
