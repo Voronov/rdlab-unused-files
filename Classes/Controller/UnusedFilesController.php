@@ -68,17 +68,15 @@ final class UnusedFilesController
             ->withCombinedFolderIdentifier($folderId);
 
         if ($isPost) {
-            $action = (string)($params['action'] ?? match (true) {
-                isset($params['deleteSingle']) => 'deleteSingle',
-                isset($params['restore']) => 'restore',
-                isset($params['purge']) => 'purge',
-                default => '',
-            });
+            // a row button posts do[<action>]=<uid>, every other button action=<action>
+            $rowAction = (array)($params['do'] ?? []);
+            $action = (string)($params['action'] ?? array_key_first($rowAction) ?? '');
+            $uid = (int)($rowAction[$action] ?? 0);
             return match ($action) {
                 'filter' => $this->redirectToList($filter->withPage(1), $folderId),
-                'deleteSingle', 'deleteSelected', 'deleteAll' => $this->handleDelete($request, $action, $filter, $folderId),
-                'restore' => $this->handleRestore($request, $folderId),
-                'purge', 'purgeSelected' => $this->handlePurge($request, $action, $folderId),
+                'deleteSingle', 'deleteSelected', 'deleteAll' => $this->handleDelete($request, $action, $uid, $filter, $folderId),
+                'restore' => $this->handleRestore($request, $uid, $folderId),
+                'purge', 'purgeSelected' => $this->handlePurge($request, $action, $uid, $folderId),
                 default => $this->redirectToList($filter, $folderId),
             };
         }
@@ -137,7 +135,7 @@ final class UnusedFilesController
         return $view->renderResponse('UnusedFiles/Index');
     }
 
-    private function handleDelete(ServerRequestInterface $request, string $action, UnusedFileFilter $filter, string $folderId): ResponseInterface
+    private function handleDelete(ServerRequestInterface $request, string $action, int $uid, UnusedFileFilter $filter, string $folderId): ResponseInterface
     {
         $body = (array)$request->getParsedBody();
         $selectAll = (string)($body['selectAll'] ?? '0') === '1';
@@ -155,9 +153,7 @@ final class UnusedFilesController
             // "Delete all matching files": in batches of bulkDeleteLimit
             $results = $this->fileDeleter->deleteMatching($filter, $this->settings->getBulkDeleteLimit());
         } else {
-            $uids = $action === 'deleteSingle' ? [(int)($body['deleteSingle'] ?? 0)] : array_map('intval', (array)($body['files'] ?? []));
-            $uids = array_values(array_unique(array_filter($uids, static fn(int $uid): bool => $uid > 0)));
-            $results = array_map($this->fileDeleter->delete(...), $uids);
+            $results = array_map($this->fileDeleter->delete(...), $this->uids($action === 'deleteSingle' ? [$uid] : ($body['files'] ?? [])));
         }
 
         if ($results === []) {
@@ -190,13 +186,7 @@ final class UnusedFilesController
         if ($skipped > 0) {
             $view->addFlashMessage($this->translate('message.skipped', [$skipped]), '', ContextualFeedbackSeverity::INFO);
         }
-        if ($failures !== []) {
-            $view->addFlashMessage(
-                implode("\n", array_slice($failures, 0, 5)),
-                $this->translate('message.failed.title', [count($failures)]),
-                ContextualFeedbackSeverity::ERROR
-            );
-        }
+        $this->addFailures($view, $failures);
         if ($remaining > 0) {
             $view->addFlashMessage(
                 $this->translate('message.remaining', [$remaining, $this->settings->getBulkDeleteLimit()]),
@@ -224,9 +214,12 @@ final class UnusedFilesController
         $files = [];
         foreach ($this->recycledFiles->findPage($page, self::RECYCLED_PER_PAGE) as $row) {
             $storage = $this->storageRepository->findByUid((int)$row['storage']);
-            // an offline storage cannot tell whether the file is still there
-            if ($storage === null || ($storage->isOnline() && !$storage->hasFile((string)$row['recycler_identifier']))) {
+            if ($storage === null) {
                 $this->recycledFiles->remove((int)$row['uid']);
+                continue;
+            }
+            // an offline storage cannot tell whether the file is still there
+            if ($storage->isOnline() && $this->recycledFiles->findFile($storage, $row) === null) {
                 continue;
             }
             $files[] = [
@@ -261,11 +254,11 @@ final class UnusedFilesController
         return $view->renderResponse('UnusedFiles/Recycled');
     }
 
-    private function handleRestore(ServerRequestInterface $request, string $folderId): ResponseInterface
+    private function handleRestore(ServerRequestInterface $request, int $uid, string $folderId): ResponseInterface
     {
         $body = (array)$request->getParsedBody();
         $view = $this->moduleTemplateFactory->create($request);
-        $result = $this->fileRestorer->restore((int)($body['restore'] ?? 0));
+        $result = $this->fileRestorer->restore($uid);
         if ($result->restored) {
             $view->addFlashMessage($this->translate('message.restored', [$result->identifier]), '', ContextualFeedbackSeverity::OK);
         } else {
@@ -282,32 +275,53 @@ final class UnusedFilesController
         );
     }
 
-    /**
-     * Permanently deletes files from the "Deleted files" list: one entry or the selected ones.
-     */
-    private function handlePurge(ServerRequestInterface $request, string $action, string $folderId): ResponseInterface
+    /** Permanently deletes files from the "Deleted files" list: one entry or the selected ones */
+    private function handlePurge(ServerRequestInterface $request, string $action, int $uid, string $folderId): ResponseInterface
     {
         $body = (array)$request->getParsedBody();
         $view = $this->moduleTemplateFactory->create($request);
-        $uids = $action === 'purge' ? [(int)($body['purge'] ?? 0)] : array_map('intval', (array)($body['files'] ?? []));
-        $uids = array_values(array_unique(array_filter($uids, static fn(int $uid): bool => $uid > 0)));
-        $results = array_map($this->fileDeleter->purgeRecycledEntry(...), $uids);
-
-        $purged = 0;
+        $uids = $this->uids($action === 'purge' ? [$uid] : ($body['files'] ?? []));
+        $counts = array_fill_keys(array_map(static fn(DeleteOutcome $outcome): string => $outcome->value, DeleteOutcome::cases()), 0);
         $failures = [];
-        foreach ($results as $result) {
-            if ($result->outcome === DeleteOutcome::Deleted) {
-                $purged++;
-            } elseif ($result->outcome === DeleteOutcome::Failed || $result->outcome === DeleteOutcome::SkippedReferenced) {
+        foreach ($uids as $entryUid) {
+            $result = $this->fileDeleter->purgeRecycledEntry($entryUid);
+            $counts[$result->outcome->value]++;
+            if ($result->outcome === DeleteOutcome::Failed || $result->outcome === DeleteOutcome::SkippedReferenced) {
                 $failures[] = trim($result->identifier . ': ' . $result->message, ': ');
             }
         }
-        if ($results === []) {
+
+        if ($uids === []) {
             $view->addFlashMessage($this->translate('message.nothingSelected'), '', ContextualFeedbackSeverity::WARNING);
         }
-        if ($purged > 0) {
-            $view->addFlashMessage($this->translate('message.purged', [$purged]), '', ContextualFeedbackSeverity::OK);
+        if ($counts[DeleteOutcome::Deleted->value] > 0) {
+            $view->addFlashMessage($this->translate('message.purged', [$counts[DeleteOutcome::Deleted->value]]), '', ContextualFeedbackSeverity::OK);
         }
+        if ($counts[DeleteOutcome::SkippedNotFound->value] > 0) {
+            $view->addFlashMessage($this->translate('message.purgeGone', [$counts[DeleteOutcome::SkippedNotFound->value]]), '', ContextualFeedbackSeverity::INFO);
+        }
+        $this->addFailures($view, $failures);
+
+        return new RedirectResponse(
+            $this->listUri(new UnusedFileFilter(), $folderId, ['action' => 'recycled', 'page' => max(1, (int)($body['page'] ?? 1))]),
+            303
+        );
+    }
+
+    /**
+     * @return list<int> positive uids without duplicates
+     */
+    private function uids(mixed $values): array
+    {
+        $uids = array_map('intval', array_filter((array)$values, 'is_scalar'));
+        return array_values(array_unique(array_filter($uids, static fn(int $uid): bool => $uid > 0)));
+    }
+
+    /**
+     * @param list<string> $failures
+     */
+    private function addFailures(ModuleTemplate $view, array $failures): void
+    {
         if ($failures !== []) {
             $view->addFlashMessage(
                 implode("\n", array_slice($failures, 0, 5)),
@@ -315,11 +329,6 @@ final class UnusedFilesController
                 ContextualFeedbackSeverity::ERROR
             );
         }
-
-        return new RedirectResponse(
-            $this->listUri(new UnusedFileFilter(), $folderId, ['action' => 'recycled', 'page' => max(1, (int)($body['page'] ?? 1))]),
-            303
-        );
     }
 
     private function csvResponse(UnusedFileFilter $filter): ResponseInterface

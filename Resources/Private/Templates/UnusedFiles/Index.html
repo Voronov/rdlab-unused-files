@@ -184,7 +184,7 @@
                                     <td><span class="badge badge-success"><f:translate key="{lll}list.status.unreferenced" /></span></td>
                                     <td class="col-control">
                                         <button type="submit"
-                                                name="deleteSingle"
+                                                name="do[deleteSingle]"
                                                 value="{file.uid}"
                                                 class="btn btn-default btn-sm t3js-modal-trigger"
                                                 title="{f:translate(key: '{lll}delete.single')}"
@@ -256,6 +256,6 @@
 </f:section>
 
 <f:section name="SortLink">
-    <a href="{uri}" class="text-nowrap"><f:translate key="{label}" /><f:if condition="{filter.sortColumn} == {column}"> <core:icon identifier="actions-sort-amount-{f:if(condition: filter.descending, then: 'down', else: 'up')}" size="small" /></f:if></a>
+    <a href="{uri}" class="text-nowrap"><f:translate key="{label}" /><f:if condition="{filter.sort} == {column}"> <core:icon identifier="actions-sort-amount-{f:if(condition: filter.descending, then: 'down', else: 'up')}" size="small" /></f:if></a>
 </f:section>
 </html>

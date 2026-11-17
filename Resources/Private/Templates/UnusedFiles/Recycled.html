@@ -54,14 +54,16 @@
                                     <td class="text-nowrap">{file.deletedAt -> f:format.date(format: 'Y-m-d H:i')}</td>
                                     <td>{file.deletedBy}</td>
                                     <td class="col-control">
-                                        <button type="submit" name="restore" value="{file.uid}" class="btn btn-default btn-sm" title="{f:translate(key: '{lll}recycled.restore')}">
+                                        <button type="submit" name="do[restore]" value="{file.uid}" class="btn btn-default btn-sm" title="{f:translate(key: '{lll}recycled.restore')}">
                                             <core:icon identifier="actions-edit-undo" size="small" />
                                             <f:translate key="{lll}recycled.restore" />
                                         </button>
                                         <button type="submit"
-                                                name="purge"
+                                                name="do[purge]"
                                                 value="{file.uid}"
                                                 class="btn btn-default btn-sm t3js-modal-trigger"
+                                                disabled="disabled"
+                                                data-rdlab-requires-js
                                                 title="{f:translate(key: '{lll}recycled.purge')}"
                                                 data-severity="error"
                                                 data-title="{f:translate(key: '{lll}delete.confirm.title')}"

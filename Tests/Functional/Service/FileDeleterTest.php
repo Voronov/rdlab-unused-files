@@ -93,6 +93,14 @@ final class FileDeleterTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function deleteMatchingKeepsThePathOrderWhateverTheListIsSortedBy(): void
+    {
+        $results = $this->get(FileDeleter::class)->deleteMatching(new UnusedFileFilter(folder: '/user_upload/', sort: 'name', descending: true), 2);
+
+        self::assertSame([2, 20], array_map(static fn(DeleteResult $result): int => $result->fileUid, $results));
+    }
+
+    #[Test]
     public function deleteMatchingWithoutLimitDeletesAllMatches(): void
     {
         $results = $this->get(FileDeleter::class)->deleteMatching(new UnusedFileFilter(folder: '/user_upload/'));

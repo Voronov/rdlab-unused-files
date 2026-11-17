@@ -6,6 +6,8 @@ namespace RDLAB\UnusedFiles\Service;
 
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\ResourceStorage;
 
 /**
  * Remembers where a file came from when the extension moves it to a recycler
@@ -31,6 +33,23 @@ final class RecycledFileRepository
             'deleted_at' => time(),
             'deleted_by' => $deletedBy,
         ]);
+    }
+
+    /**
+     * The entry's file while it is still in the recycler folder, else the entry is dropped.
+     *
+     * @param array<string, mixed> $row
+     */
+    public function findFile(ResourceStorage $storage, array $row): ?File
+    {
+        $identifier = (string)$row['recycler_identifier'];
+        $file = $storage->hasFile($identifier) ? $storage->getFile($identifier) : null;
+        // a different file that took the same place in the recycler folder later
+        if (!$file instanceof File || (int)$file->getSize() !== (int)$row['size']) {
+            $this->remove((int)$row['uid']);
+            return null;
+        }
+        return $file;
     }
 
     public function remove(int $uid): void

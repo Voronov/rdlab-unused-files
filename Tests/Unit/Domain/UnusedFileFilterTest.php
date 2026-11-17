@@ -191,7 +191,7 @@ final class UnusedFileFilterTest extends UnitTestCase
         self::assertTrue($sorted->withSortToggled('uploaded')->descending);
         self::assertFalse($sorted->withSortToggled('uploaded')->withSortToggled('uploaded')->descending);
         self::assertFalse($sorted->withSortToggled('size')->descending);
-        self::assertTrue($filter->withSortToggled('folder')->descending, 'the default order is by folder');
+        self::assertFalse($filter->withSortToggled('folder')->descending, 'the default order has no sort column');
     }
 
     /**

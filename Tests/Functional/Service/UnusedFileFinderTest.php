@@ -65,6 +65,30 @@ final class UnusedFileFinderTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function findAllSortsNamesCaseInsensitively(): void
+    {
+        self::assertSame([2, 10, 20, 11, 19, 1], $this->findUids(new UnusedFileFilter(sort: 'name')));
+    }
+
+    #[Test]
+    public function findAllSortsByFolderWithinEachStorage(): void
+    {
+        self::assertSame([10, 2, 20, 19, 1, 11], $this->findUids(new UnusedFileFilter(sort: 'folder')));
+        self::assertSame([11, 1, 19, 20, 2, 10], $this->findUids(new UnusedFileFilter(sort: 'folder', descending: true)));
+    }
+
+    #[Test]
+    public function isReferencedAlsoChecksFilesOutsideTheList(): void
+    {
+        $finder = $this->get(UnusedFileFinder::class);
+        // 3 refindex, 4 file reference, 6 excluded folder but unreferenced
+        self::assertTrue($finder->isReferenced(3));
+        self::assertTrue($finder->isReferenced(4));
+        self::assertFalse($finder->isReferenced(6));
+        self::assertFalse($finder->isReferenced(1));
+    }
+
+    #[Test]
     public function filterByStorage(): void
     {
         self::assertSame([11], $this->findUids(new UnusedFileFilter(storage: 2)));

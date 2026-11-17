@@ -42,7 +42,8 @@ final class FileRestorerTest extends FunctionalTestCase
         self::assertSame('/user_upload/unused.pdf', $entry['original_identifier']);
         self::assertSame('/_recycler_/unused.pdf', $entry['recycler_identifier']);
         self::assertSame('unused.pdf', $entry['name']);
-        self::assertSame(100, (int)$entry['size']);
+        // the size of the file on disk, not the one of a stale index entry (100 in the fixture)
+        self::assertSame(6, (int)$entry['size']);
     }
 
     #[Test]

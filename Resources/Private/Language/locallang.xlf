@@ -225,6 +225,9 @@
             <trans-unit id="message.purged" resname="message.purged">
                 <source>Files deleted permanently: %d.</source>
             </trans-unit>
+            <trans-unit id="message.purgeGone" resname="message.purgeGone">
+                <source>%d entries were removed from the list: their files are no longer in the recycler folder.</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

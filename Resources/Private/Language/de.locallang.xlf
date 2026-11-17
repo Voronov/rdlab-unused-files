@@ -299,6 +299,10 @@
                 <source>Files deleted permanently: %d.</source>
                 <target>Endgültig gelöschte Dateien: %d.</target>
             </trans-unit>
+            <trans-unit id="message.purgeGone" resname="message.purgeGone">
+                <source>%d entries were removed from the list: their files are no longer in the recycler folder.</source>
+                <target>%d Einträge wurden aus der Liste entfernt: ihre Dateien liegen nicht mehr im Papierkorb-Ordner.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

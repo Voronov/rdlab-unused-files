@@ -173,7 +173,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     public function deleteSingleRemovesFileAndRedirects(): void
     {
         $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
-        $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1', 'filter' => ['page' => '2']]);
+        $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1'], 'filter' => ['page' => '2']]);
 
         self::assertEquals(['id' => '1:/user_upload/', 'filter' => ['page' => '2']], $this->redirectArguments($response));
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/user_upload/unused.pdf');
@@ -243,7 +243,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     #[Test]
     public function deleteSingleIsRefusedWithStaleReferenceIndex(): void
     {
-        $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $response = $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1']]);
 
         self::assertSame(303, $response->getStatusCode());
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
@@ -264,15 +264,15 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     public function recycledListShowsDeletedFileAndRestorePutsItBack(): void
     {
         $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
-        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1']]);
         $this->flashMessages();
 
         $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
         self::assertStringContainsString('unused.pdf', $list);
         self::assertStringContainsString('1:/user_upload/', $list);
-        self::assertSame(1, preg_match('/name="restore" value="(\d+)"/', $list, $matches));
+        self::assertSame(1, preg_match('/name="do\[restore\]" value="(\d+)"/', $list, $matches));
 
-        $response = $this->dispatch('POST', [], ['action' => 'restore', 'restore' => $matches[1] ?? '']);
+        $response = $this->dispatch('POST', [], ['do' => ['restore' => $matches[1] ?? '']]);
 
         self::assertEquals(['action' => 'recycled', 'page' => '1'], $this->redirectArguments($response));
         self::assertFileExists($this->instancePath . '/fileadmin/user_upload/unused.pdf');
@@ -286,12 +286,12 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     public function purgeDeletesRecycledFilePermanently(): void
     {
         $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
-        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1']]);
         $this->flashMessages();
         $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
-        self::assertSame(1, preg_match('/name="purge"\s+value="(\d+)"/', $list, $matches));
+        self::assertSame(1, preg_match('/name="do\[purge\]"\s+value="(\d+)"/', $list, $matches));
 
-        $response = $this->dispatch('POST', [], ['purge' => $matches[1] ?? '', 'page' => '1']);
+        $response = $this->dispatch('POST', [], ['do' => ['purge' => $matches[1] ?? ''], 'page' => '1']);
 
         self::assertEquals(['action' => 'recycled', 'page' => '1'], $this->redirectArguments($response));
         self::assertFileDoesNotExist($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
@@ -309,9 +309,61 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
         $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
         self::assertSame(2, preg_match_all('/name="files\[\]" value="(\d+)"/', $list, $matches));
 
+        $selected = $this->get(RecycledFileRepository::class)->findByUid((int)$matches[1][0]);
+        $kept = $this->get(RecycledFileRepository::class)->findByUid((int)$matches[1][1]);
+
         $this->dispatch('POST', [], ['action' => 'purgeSelected', 'files' => [$matches[1][0]]]);
 
-        self::assertSame(ContextualFeedbackSeverity::OK, $this->flashMessages()[0]->getSeverity());
+        self::assertSame('Files deleted permanently: 1.', $this->flashMessages()[0]->getMessage());
+        self::assertFileDoesNotExist($this->instancePath . '/fileadmin' . $selected['recycler_identifier']);
+        self::assertFileExists($this->instancePath . '/fileadmin' . $kept['recycler_identifier']);
+        self::assertSame(1, $this->get(RecycledFileRepository::class)->countAll());
+    }
+
+    #[Test]
+    public function purgeKeepsAnotherFileThatTookThePlaceInTheRecycler(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1']]);
+        $this->flashMessages();
+        $uid = (int)$this->get(RecycledFileRepository::class)->findPage(1, 10)[0]['uid'];
+        // the recycler is emptied by hand, later another file with the same name is deleted in the file list
+        $storage = $this->get(StorageRepository::class)->findByUid(1);
+        $storage->deleteFile($storage->getFile('/_recycler_/unused.pdf'));
+        file_put_contents($this->instancePath . '/fileadmin/user_upload/unused.pdf', 'another file with the same name');
+        $storage->deleteFile($storage->getFile('/user_upload/unused.pdf'));
+        self::assertFileExists($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
+
+        $this->dispatch('POST', [], ['do' => ['purge' => (string)$uid]]);
+
+        self::assertFileExists($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
+        self::assertSame(ContextualFeedbackSeverity::INFO, $this->flashMessages()[0]->getSeverity());
+        self::assertSame(0, $this->get(RecycledFileRepository::class)->countAll());
+    }
+
+    #[Test]
+    public function purgeKeepsARecycledFileThatIsReferencedAgain(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1']]);
+        $this->flashMessages();
+        $uid = (int)$this->get(RecycledFileRepository::class)->findPage(1, 10)[0]['uid'];
+        $fileUid = $this->get(StorageRepository::class)->findByUid(1)->getFile('/_recycler_/unused.pdf')->getUid();
+        $this->get(ConnectionPool::class)->getConnectionForTable('sys_refindex')->insert('sys_refindex', [
+            'hash' => md5('purge-referenced'),
+            'tablename' => 'tt_content',
+            'recuid' => 1,
+            'field' => 'image',
+            'ref_table' => 'sys_file',
+            'ref_uid' => $fileUid,
+        ]);
+
+        $this->dispatch('POST', [], ['do' => ['purge' => (string)$uid]]);
+
+        self::assertFileExists($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
+        $messages = $this->flashMessages();
+        self::assertSame(ContextualFeedbackSeverity::ERROR, $messages[0]->getSeverity());
+        self::assertStringContainsString('the file is referenced', $messages[0]->getMessage());
         self::assertSame(1, $this->get(RecycledFileRepository::class)->countAll());
     }
 
@@ -319,22 +371,37 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     public function purgeOfEntryWhoseFileLeftTheRecyclerDropsTheEntry(): void
     {
         $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
-        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1']]);
         $this->flashMessages();
         unlink($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
         $uid = (int)$this->get(RecycledFileRepository::class)->findPage(1, 10)[0]['uid'];
 
-        $this->dispatch('POST', [], ['purge' => (string)$uid]);
+        $this->dispatch('POST', [], ['do' => ['purge' => (string)$uid]]);
 
-        self::assertSame([], $this->flashMessages());
+        $messages = $this->flashMessages();
+        self::assertSame(ContextualFeedbackSeverity::INFO, $messages[0]->getSeverity());
+        self::assertStringStartsWith('1 entries were removed from the list', $messages[0]->getMessage());
         self::assertSame(0, $this->get(RecycledFileRepository::class)->countAll());
+    }
+
+    #[Test]
+    public function purgeButtonOfTheDeletedFilesListNeedsJavaScript(): void
+    {
+        $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1']]);
+        $this->flashMessages();
+
+        $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
+
+        self::assertSame(1, preg_match('/<button[^>]*name="do\[purge\]"[^>]*>/s', $list, $purgeButton));
+        self::assertStringContainsString('disabled="disabled"', $purgeButton[0] ?? '');
     }
 
     #[Test]
     public function recycledListDropsEntryOfFileThatLeftTheRecycler(): void
     {
         $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
-        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1']]);
         unlink($this->instancePath . '/fileadmin/_recycler_/unused.pdf');
 
         $list = (string)$this->dispatch('GET', ['action' => 'recycled'])->getBody();
@@ -347,7 +414,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     public function recycledListKeepsEntriesOfAnOfflineStorage(): void
     {
         $this->get(Registry::class)->set('core', 'sys_refindex_lastUpdate', time());
-        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['deleteSingle' => '1']);
+        $this->dispatch('POST', ['id' => '1:/user_upload/'], ['do' => ['deleteSingle' => '1']]);
         $connection = $this->get(ConnectionPool::class)->getConnectionForTable('sys_file_storage');
         $configuration = (string)$connection->select(['configuration'], 'sys_file_storage', ['uid' => 1])->fetchOne();
         $connection->update('sys_file_storage', ['configuration' => str_replace('fileadmin/', 'unmounted/', $configuration)], ['uid' => 1]);
@@ -371,7 +438,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
         $list = (string)$this->dispatch('GET', ['action' => 'recycled', 'page' => '99'])->getBody();
 
         self::assertStringNotContainsString('No deleted files to restore.', $list);
-        self::assertSame(1, preg_match_all('/name="restore" value="\d+"/', $list));
+        self::assertSame(1, preg_match_all('/name="do\[restore\]" value="\d+"/', $list));
     }
 
     #[Test]
@@ -398,7 +465,7 @@ final class UnusedFilesControllerTest extends FunctionalTestCase
     #[Test]
     public function restoreOfUnknownEntryShowsError(): void
     {
-        $response = $this->dispatch('POST', [], ['action' => 'restore', 'restore' => '999']);
+        $response = $this->dispatch('POST', [], ['do' => ['restore' => '999']]);
 
         self::assertSame(303, $response->getStatusCode());
         self::assertSame(ContextualFeedbackSeverity::ERROR, $this->flashMessages()[0]->getSeverity());

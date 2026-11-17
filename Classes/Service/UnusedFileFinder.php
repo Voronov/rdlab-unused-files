@@ -22,13 +22,14 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  */
 final class UnusedFileFinder
 {
+    /** Sort column => fields, a field in LOWER() sorts case-insensitively on every DBMS */
     private const SORT_FIELDS = [
-        'name' => 'f.name',
-        'folder' => 'f.identifier',
-        'type' => 'f.extension',
-        'size' => 'f.size',
-        'uploaded' => 'f.creation_date',
-        'modified' => 'f.modification_date',
+        'name' => ['LOWER(f.name)'],
+        'folder' => ['f.storage', 'f.identifier'],
+        'type' => ['LOWER(f.extension)'],
+        'size' => ['f.size'],
+        'uploaded' => ['f.creation_date'],
+        'modified' => ['f.modification_date'],
     ];
 
     /** @var list<int>|null */
@@ -114,6 +115,28 @@ final class UnusedFileFinder
         return (int)$queryBuilder->count('f.uid')->executeQuery()->fetchOne() === 1;
     }
 
+    /** Whether anything references the file, wherever it lies (also in a recycler or excluded folder) */
+    public function isReferenced(int $fileUid): bool
+    {
+        if (in_array($fileUid, $this->findStringReferencedUids(), true) || in_array($fileUid, $this->findRestorableReferencedUids(), true)) {
+            return true;
+        }
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file');
+        $queryBuilder->getRestrictions()->removeAll();
+        $queryBuilder
+            ->count('f.uid')
+            ->from('sys_file', 'f')
+            ->where(
+                $queryBuilder->expr()->eq('f.uid', $queryBuilder->createNamedParameter($fileUid, Connection::PARAM_INT)),
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->in('f.uid', $this->referenceIndexSubQuery($queryBuilder)),
+                    $queryBuilder->expr()->in('f.uid', $this->fileReferenceSubQuery($queryBuilder)),
+                ),
+            );
+
+        return (int)$queryBuilder->executeQuery()->fetchOne() > 0;
+    }
+
     /**
      * @return array<int, string> storage uid => name
      */
@@ -162,11 +185,18 @@ final class UnusedFileFinder
 
     private function applySorting(QueryBuilder $queryBuilder, UnusedFileFilter $filter): void
     {
-        $field = self::SORT_FIELDS[$filter->sort] ?? 'f.identifier';
-        $queryBuilder->orderBy($field, $filter->descending ? 'DESC' : 'ASC');
-        // stable order for pagination and the batch-wise deletion
-        if ($field !== 'f.identifier') {
-            $queryBuilder->addOrderBy('f.identifier', 'ASC');
+        $fields = self::SORT_FIELDS[$filter->sort] ?? ['f.identifier'];
+        $concreteQueryBuilder = $queryBuilder->getConcreteQueryBuilder();
+        $concreteQueryBuilder->resetOrderBy();
+        foreach ($fields as $field) {
+            $expression = preg_match('/^LOWER\((.+)\)$/', $field, $matches) === 1
+                ? 'LOWER(' . $queryBuilder->quoteIdentifier($matches[1]) . ')'
+                : $queryBuilder->quoteIdentifier($field);
+            $concreteQueryBuilder->addOrderBy($expression, $filter->descending ? 'DESC' : 'ASC');
+        }
+        // ends with uid: a unique, stable order for pagination and the batch-wise deletion
+        foreach (array_diff(['f.identifier', 'f.storage', 'f.uid'], $fields) as $field) {
+            $concreteQueryBuilder->addOrderBy($queryBuilder->quoteIdentifier($field), 'ASC');
         }
     }
 

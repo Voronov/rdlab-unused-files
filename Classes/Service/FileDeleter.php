@@ -78,6 +78,7 @@ final class FileDeleter implements LoggerAwareInterface
      */
     public function deleteMatching(UnusedFileFilter $filter, int $limit = 0, ?\Closure $onResult = null): array
     {
+        $filter = $filter->withDefaultSort();
         $results = [];
         $removed = 0;
         $failed = 0;
@@ -137,43 +138,48 @@ final class FileDeleter implements LoggerAwareInterface
             return new DeleteResult($fileUid, '', DeleteOutcome::SkippedNotFound);
         }
 
-        if (!RecyclerFinder::isInRecycler($file->getIdentifier())) {
-            return new DeleteResult($fileUid, $file->getCombinedIdentifier(), DeleteOutcome::SkippedReferenced, 'not in a recycler folder');
-        }
-
-        return $this->remove($file, 'Recycled file');
+        return $this->purge($file);
     }
 
-    /**
-     * Permanently deletes the file of a "Deleted files" entry. An entry whose
-     * file is no longer in the recycler folder is dropped.
-     */
+    /** Permanently deletes the file of a "Deleted files" entry */
     public function purgeRecycledEntry(int $entryUid): DeleteResult
     {
         $row = $this->recycledFiles->findByUid($entryUid);
         if ($row === null) {
             return new DeleteResult(0, '', DeleteOutcome::SkippedNotFound);
         }
-        $recyclerIdentifier = (string)$row['recycler_identifier'];
-        $combinedIdentifier = (int)$row['storage'] . ':' . $recyclerIdentifier;
+        $combinedIdentifier = (int)$row['storage'] . ':' . (string)$row['recycler_identifier'];
         $storage = $this->storageRepository->findByUid((int)$row['storage']);
-        if ($storage !== null && !$storage->isOnline()) {
-            return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::Failed, 'The storage is offline');
-        }
-        if ($storage === null || !$storage->hasFile($recyclerIdentifier)) {
+        if ($storage === null) {
             $this->recycledFiles->remove($entryUid);
             return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::SkippedNotFound);
         }
+        if (!$storage->isOnline()) {
+            return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::Failed, 'The storage is offline');
+        }
 
         try {
-            $file = $storage->getFile($recyclerIdentifier);
+            $file = $this->recycledFiles->findFile($storage, $row);
         } catch (\Throwable $exception) {
+            $this->logger?->error('Looking up the recycled file failed', ['file' => $combinedIdentifier, 'exception' => $exception]);
             return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::Failed, $exception->getMessage());
         }
-        if (!$file instanceof File) {
-            return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::Failed, 'Not a file');
+        if ($file === null) {
+            return new DeleteResult(0, $combinedIdentifier, DeleteOutcome::SkippedNotFound);
         }
-        return $this->purgeFromRecycler($file->getUid());
+        return $this->purge($file);
+    }
+
+    private function purge(File $file): DeleteResult
+    {
+        if (!RecyclerFinder::isInRecycler($file->getIdentifier())) {
+            return new DeleteResult($file->getUid(), $file->getCombinedIdentifier(), DeleteOutcome::SkippedReferenced, 'not in a recycler folder');
+        }
+        if ($this->finder->isReferenced($file->getUid())) {
+            return new DeleteResult($file->getUid(), $file->getCombinedIdentifier(), DeleteOutcome::SkippedReferenced, 'the file is referenced');
+        }
+
+        return $this->remove($file, 'Recycled file');
     }
 
     private function remove(File $file, string $what): DeleteResult
@@ -182,7 +188,6 @@ final class FileDeleter implements LoggerAwareInterface
         $storageUid = $file->getStorage()->getUid();
         $identifierInStorage = $file->getIdentifier();
         $name = $file->getName();
-        $size = (int)$file->getSize();
         try {
             $file->getStorage()->deleteFile($file);
         } catch (\Throwable $exception) {
@@ -195,9 +200,9 @@ final class FileDeleter implements LoggerAwareInterface
         $this->writeSystemLog($what, $identifier, $outcome);
         try {
             if ($outcome === DeleteOutcome::MovedToRecycler) {
-                // FAL dropped the index entry on the move, index the file at its new place so the move date is known
-                $file->getStorage()->getFile($file->getIdentifier());
-                $this->recycledFiles->add($storageUid, $identifierInStorage, $file->getIdentifier(), $name, $size, $this->getBackendUserName());
+                // FAL dropped the index entry on the move, index the file at its new place so the move date and real size are known
+                $recycledFile = $file->getStorage()->getFile($file->getIdentifier());
+                $this->recycledFiles->add($storageUid, $identifierInStorage, $file->getIdentifier(), $name, (int)$recycledFile->getSize(), $this->getBackendUserName());
             } else {
                 $this->recycledFiles->removeByRecyclerIdentifier($storageUid, $identifierInStorage);
             }

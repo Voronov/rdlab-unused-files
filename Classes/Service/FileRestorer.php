@@ -35,24 +35,24 @@ final class FileRestorer implements LoggerAwareInterface
             return new RestoreResult(false, '', 'unknown entry');
         }
         $originalIdentifier = (string)$row['original_identifier'];
-        $recyclerIdentifier = (string)$row['recycler_identifier'];
         $combinedIdentifier = (int)$row['storage'] . ':' . $originalIdentifier;
 
         $storage = $this->storageRepository->findByUid((int)$row['storage']);
         if ($storage !== null && !$storage->isOnline()) {
             return new RestoreResult(false, $combinedIdentifier, 'the storage is offline');
         }
-        if ($storage === null || !$storage->hasFile($recyclerIdentifier)) {
-            $this->recycledFiles->remove($uid);
-            return new RestoreResult(false, $combinedIdentifier, 'the file is no longer in the recycler folder');
-        }
 
         try {
+            $file = $storage === null ? null : $this->recycledFiles->findFile($storage, $row);
+            if ($storage === null || $file === null) {
+                $this->recycledFiles->remove($uid);
+                return new RestoreResult(false, $combinedIdentifier, 'the file is no longer in the recycler folder');
+            }
             $folderIdentifier = CsvExporter::folderOf($originalIdentifier);
             $folder = $storage->hasFolder($folderIdentifier)
                 ? $storage->getFolder($folderIdentifier)
                 : $storage->createFolder(trim($folderIdentifier, '/'), $storage->getRootLevelFolder());
-            $file = $storage->moveFile($storage->getFile($recyclerIdentifier), $folder, basename($originalIdentifier), DuplicationBehavior::CANCEL);
+            $file = $storage->moveFile($file, $folder, basename($originalIdentifier), DuplicationBehavior::CANCEL);
         } catch (\Throwable $exception) {
             $this->logger?->error('Restoring file failed', ['file' => $combinedIdentifier, 'exception' => $exception]);
             return new RestoreResult(false, $combinedIdentifier, $exception->getMessage());

@@ -50,6 +50,8 @@ Afterwards update the database schema (`vendor/bin/typo3 extension:setup` or `Ad
 - Deleting is refused while the reference index is older than `referenceIndexMaxAgeHours`.
 - Deletions and restores are logged to the TYPO3 system log (`Log` module).
 - **Restore:** the "Deleted files" button lists every file the module or the delete command moved to a recycler folder, with its original folder, date and user. "Restore" moves the file back to where it came from (the folder is created again when it is gone; a file that took the old place meanwhile is not overwritten). The file gets a new index record, so metadata such as title and alternative text is not restored. TYPO3 cleans the file name on every move, so a file with a legacy name (spaces, brackets) comes back under the cleaned name, which the message shows. Files removed from the recycler, by `purgerecycler` or by hand, can no longer be restored; while a storage is offline its entries are kept.
+- **Delete for good:** the delete button of an entry, or the selected entries, removes the file from the recycler folder for good after a confirmation. A file that is referenced again is kept; an entry whose file was replaced in the recycler by another file with the same name is only dropped from the list. `purgerecycler` also keeps referenced files.
+- **Sorting:** a click on a column header of the list sorts by it, a second click reverses the order. Deleting "all matching files" always works through them by path, whatever the list is sorted by.
 
 ## CLI
 

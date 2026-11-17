@@ -42,7 +42,7 @@ final class UnusedFileFilter
             $folder = '/' . $folder . '/';
         }
 
-        $itemsPerPage = (int)($data['itemsPerPage'] ?? self::DEFAULT_ITEMS_PER_PAGE);
+        $itemsPerPage = self::toInt($data['itemsPerPage'] ?? self::DEFAULT_ITEMS_PER_PAGE);
         if (!in_array($itemsPerPage, self::ALLOWED_ITEMS_PER_PAGE, true)) {
             $itemsPerPage = self::DEFAULT_ITEMS_PER_PAGE;
         }
@@ -52,15 +52,45 @@ final class UnusedFileFilter
         }
 
         return new self(
-            storage: max(0, (int)($data['storage'] ?? 0)),
+            storage: max(0, self::toInt($data['storage'] ?? 0)),
             folder: $folder,
             extension: strtolower(trim((string)($data['extension'] ?? ''), " .\t\n\r")),
-            minAgeDays: max(0, (int)($data['minAgeDays'] ?? 0), 7 * min(intdiv(PHP_INT_MAX, 7), (int)($data['minAgeWeeks'] ?? 0))),
+            minAgeDays: max(0, self::toInt($data['minAgeDays'] ?? 0), 7 * min(intdiv(PHP_INT_MAX, 7), self::toInt($data['minAgeWeeks'] ?? 0))),
             search: trim((string)($data['search'] ?? '')),
-            page: max(1, (int)($data['page'] ?? 1)),
+            page: max(1, self::toInt($data['page'] ?? 1)),
             itemsPerPage: $itemsPerPage,
             sort: $sort,
             descending: (bool)($data['descending'] ?? false),
+        );
+    }
+
+    /** An (int) cast that clamps numbers beyond the int range, which PHP 8.5 warns about */
+    private static function toInt(mixed $value): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+        if (!is_numeric($value)) {
+            return 0;
+        }
+        $number = (float)$value;
+        if ($number >= (float)PHP_INT_MAX) {
+            return PHP_INT_MAX;
+        }
+        return $number <= (float)PHP_INT_MIN ? PHP_INT_MIN : (int)$number;
+    }
+
+    /** The default order by path, used where the order must not depend on the list view */
+    public function withDefaultSort(): self
+    {
+        return new self(
+            $this->storage,
+            $this->folder,
+            $this->extension,
+            $this->minAgeDays,
+            $this->search,
+            $this->page,
+            $this->itemsPerPage,
         );
     }
 
@@ -117,7 +147,7 @@ final class UnusedFileFilter
             1,
             $this->itemsPerPage,
             $sort,
-            $sort === $this->getSortColumn() && !$this->descending,
+            $sort === $this->sort && !$this->descending,
         );
     }
 
@@ -158,12 +188,6 @@ final class UnusedFileFilter
             $result['descending'] = 1;
         }
         return $result;
-    }
-
-    /** The column the list is sorted by, the default order is by path */
-    public function getSortColumn(): string
-    {
-        return $this->sort === '' ? 'folder' : $this->sort;
     }
 
     /** Minimum age in weeks (rounded up), the unit of the backend filter */

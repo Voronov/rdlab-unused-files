@@ -16,6 +16,14 @@ class UnusedFiles {
     if (!this.form) {
       return;
     }
+    // buttons that delete for good stay disabled until the confirmation dialog can be shown
+    this.form.querySelectorAll('[data-rdlab-requires-js]').forEach((button) => { button.disabled = false; });
+    // Enter in a checkbox would submit the form with the first row button (restore, delete)
+    this.form.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && event.target instanceof HTMLInputElement && event.target.type === 'checkbox') {
+        event.preventDefault();
+      }
+    });
     this.toggleAll = this.form.querySelector('[data-rdlab-toggle-all]');
     this.checkboxes = Array.from(this.form.querySelectorAll('input[name="files[]"]'));
     this.selectAllInput = this.form.querySelector('input[name="selectAll"]');
