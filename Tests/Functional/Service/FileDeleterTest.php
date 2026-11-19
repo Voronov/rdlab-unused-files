@@ -129,6 +129,22 @@ final class FileDeleterTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function fileOfAMissingStorageIsRemovedFromTheIndex(): void
+    {
+        $connectionPool = $this->get(ConnectionPool::class);
+        $connectionPool->getConnectionForTable('sys_file_storage')->delete('sys_file_storage', ['uid' => 2]);
+        $connectionPool->getConnectionForTable('sys_file_metadata')->insert('sys_file_metadata', ['file' => 11]);
+
+        self::assertSame(DeleteOutcome::Failed, $this->get(FileDeleter::class)->purgeFromRecycler(11)->outcome);
+        $result = $this->get(FileDeleter::class)->delete(11);
+
+        self::assertSame(DeleteOutcome::Deleted, $result->outcome);
+        self::assertSame('2:/docs/second.pdf', $result->identifier);
+        self::assertSame(0, $connectionPool->getConnectionForTable('sys_file')->count('uid', 'sys_file', ['uid' => 11]));
+        self::assertSame(0, $connectionPool->getConnectionForTable('sys_file_metadata')->count('uid', 'sys_file_metadata', ['file' => 11]));
+    }
+
+    #[Test]
     public function purgeFromRecyclerSkipsFilesOutsideRecyclerFolders(): void
     {
         $result = $this->get(FileDeleter::class)->purgeFromRecycler(1);

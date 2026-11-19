@@ -10,6 +10,7 @@ use RDLAB\UnusedFiles\Domain\DeleteOutcome;
 use RDLAB\UnusedFiles\Domain\DeleteResult;
 use RDLAB\UnusedFiles\Domain\UnusedFileFilter;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
@@ -36,14 +37,24 @@ final class FileDeleter implements LoggerAwareInterface
         private readonly UnusedFileFinder $finder,
         private readonly RecycledFileRepository $recycledFiles,
         private readonly StorageRepository $storageRepository,
+        private readonly ConnectionPool $connectionPool,
     ) {}
 
     public function delete(int $fileUid): DeleteResult
     {
+        $row = $this->connectionPool->getConnectionForTable('sys_file')
+            ->select(['storage', 'identifier'], 'sys_file', ['uid' => $fileUid])->fetchAssociative();
+        if (is_array($row) && $this->storageRepository->findByUid((int)$row['storage']) === null) {
+            return $this->removeFromIndex($fileUid, (int)$row['storage'] . ':' . (string)$row['identifier']);
+        }
+
         try {
             $file = $this->resourceFactory->getFileObject($fileUid);
         } catch (FileDoesNotExistException) {
             return new DeleteResult($fileUid, '', DeleteOutcome::SkippedNotFound);
+        } catch (\Throwable $exception) {
+            // e.g. the file's storage record is gone
+            return new DeleteResult($fileUid, '', DeleteOutcome::Failed, $exception->getMessage());
         }
 
         if (!$this->finder->isUnreferenced($fileUid)) {
@@ -136,6 +147,9 @@ final class FileDeleter implements LoggerAwareInterface
             $file = $this->resourceFactory->getFileObject($fileUid);
         } catch (FileDoesNotExistException) {
             return new DeleteResult($fileUid, '', DeleteOutcome::SkippedNotFound);
+        } catch (\Throwable $exception) {
+            // e.g. the file's storage record is gone
+            return new DeleteResult($fileUid, '', DeleteOutcome::Failed, $exception->getMessage());
         }
 
         return $this->purge($file);
@@ -220,6 +234,20 @@ final class FileDeleter implements LoggerAwareInterface
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
         return $backendUser instanceof BackendUserAuthentication ? (string)($backendUser->user['username'] ?? '') : '';
+    }
+
+    /** Drops the index entry of a file whose storage record is gone: FAL cannot reach the file itself */
+    private function removeFromIndex(int $fileUid, string $identifier): DeleteResult
+    {
+        if (!$this->finder->isUnreferenced($fileUid)) {
+            return new DeleteResult($fileUid, $identifier, DeleteOutcome::SkippedReferenced);
+        }
+        $this->connectionPool->getConnectionForTable('sys_file_metadata')->delete('sys_file_metadata', ['file' => $fileUid]);
+        $this->connectionPool->getConnectionForTable('sys_file')->delete('sys_file', ['uid' => $fileUid]);
+        $this->logger?->info('Index entry of a file without storage removed', ['file' => $identifier]);
+        $this->writeSystemLog('Index entry of file without storage', $identifier, DeleteOutcome::Deleted);
+
+        return new DeleteResult($fileUid, $identifier, DeleteOutcome::Deleted);
     }
 
     private function writeSystemLog(string $what, string $identifier, DeleteOutcome $outcome): void
